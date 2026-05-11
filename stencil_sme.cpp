@@ -1,5 +1,5 @@
 // ARM SME (Scalable Matrix Extension) Stencil 算法实现
-// 使用 SVE 向量指令和正确的 ACLE 属性
+// 使用 SVE 向量指令和 SME ZA 累加器
 
 #include <iostream>
 #include <vector>
@@ -10,18 +10,18 @@
 
 using namespace std;
 
-// ============================================================
-// 使用 __arm_streaming 关键字管理流模式
-// 编译器会自动在函数入口插入 smstart，出口插入 smstop
-// ============================================================
-
 // 2D Stencil 计算 - 5点模板（热传导方程）
-// 计算: new_grid[i][j] = (grid[i-1][j] + grid[i+1][j] + grid[i][j-1] + grid[i][j+1]) / 4
-void stencil2D_5point_sve(double* grid, double* new_grid, int rows, int cols) __arm_streaming {
-    uint64_t VL = svcntd();
-
+// 使用 SVE 向量化 + SME 流模式 + MOPA 外积累加
+void stencil2D_5point_sme(double* __restrict__ grid, double* __restrict__ new_grid, int rows, int cols) 
+    __arm_streaming __arm_new("za") {
+    
+    uint64_t SVL = svcntd();
+    svfloat64_t one_vec = svdup_f64(1.0);
+    svfloat64_t quarter_vec = svdup_f64(0.25);
+    svbool_t pg_all = svptrue_b64();
+    
     for (int i = 1; i < rows - 1; i++) {
-        for (int j = 1; j < cols - 1; j += VL) {
+        for (int j = 1; j < cols - 1; j += SVL) {
             svbool_t pg = svwhilelt_b64(j, cols - 1);
             
             svfloat64_t up = svld1_f64(pg, &grid[(i - 1) * cols + j]);
@@ -29,22 +29,31 @@ void stencil2D_5point_sve(double* grid, double* new_grid, int rows, int cols) __
             svfloat64_t left = svld1_f64(pg, &grid[i * cols + j - 1]);
             svfloat64_t right = svld1_f64(pg, &grid[i * cols + j + 1]);
             
-            svfloat64_t sum = svadd_f64_z(pg, up, down);
-            sum = svadd_f64_z(pg, sum, left);
-            sum = svadd_f64_z(pg, sum, right);
-            svfloat64_t result = svmul_f64_z(pg, sum, svdup_f64(0.25));
+            svfloat64_t sum = svmopa_za64_f64(1, pg_all, pg, up, one_vec);
+            sum = svmopa_za64_f64(0, pg_all, pg, down, one_vec);
+            sum = svmopa_za64_f64(0, pg_all, pg, left, one_vec);
+            sum = svmopa_za64_f64(0, pg_all, pg, right, one_vec);
             
+            svfloat64_t result = svmul_f64_z(pg, sum, quarter_vec);
             svst1_f64(pg, &new_grid[i * cols + j], result);
         }
     }
 }
 
 // 2D Stencil 计算 - 9点模板（更精确的拉普拉斯算子）
-void stencil2D_9point_sve(double* grid, double* new_grid, int rows, int cols) __arm_streaming {
-    uint64_t VL = svcntd();
-
+// 使用 SVE 向量化 + SME 流模式 + MOPA 外积累加
+void stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_grid, int rows, int cols) 
+    __arm_streaming __arm_new("za") {
+    
+    uint64_t SVL = svcntd();
+    svfloat64_t four_vec = svdup_f64(4.0);
+    svfloat64_t one_vec = svdup_f64(1.0);
+    svfloat64_t half_vec = svdup_f64(0.5);
+    svfloat64_t eighth_vec = svdup_f64(0.125);
+    svbool_t pg_all = svptrue_b64();
+    
     for (int i = 1; i < rows - 1; i++) {
-        for (int j = 1; j < cols - 1; j += VL) {
+        for (int j = 1; j < cols - 1; j += SVL) {
             svbool_t pg = svwhilelt_b64(j, cols - 1);
             
             svfloat64_t center = svld1_f64(pg, &grid[i * cols + j]);
@@ -57,53 +66,54 @@ void stencil2D_9point_sve(double* grid, double* new_grid, int rows, int cols) __
             svfloat64_t down_left = svld1_f64(pg, &grid[(i + 1) * cols + j - 1]);
             svfloat64_t down_right = svld1_f64(pg, &grid[(i + 1) * cols + j + 1]);
             
-            svfloat64_t center_weighted = svmul_f64_z(pg, center, svdup_f64(4.0));
+            svfloat64_t sum = svmopa_za64_f64(1, pg_all, pg, center, four_vec);
+            sum = svmopa_za64_f64(0, pg_all, pg, up, one_vec);
+            sum = svmopa_za64_f64(0, pg_all, pg, down, one_vec);
+            sum = svmopa_za64_f64(0, pg_all, pg, left, one_vec);
+            sum = svmopa_za64_f64(0, pg_all, pg, right, one_vec);
+            sum = svmopa_za64_f64(0, pg_all, pg, up_left, half_vec);
+            sum = svmopa_za64_f64(0, pg_all, pg, up_right, half_vec);
+            sum = svmopa_za64_f64(0, pg_all, pg, down_left, half_vec);
+            sum = svmopa_za64_f64(0, pg_all, pg, down_right, half_vec);
             
-            svfloat64_t sum_ortho = svadd_f64_z(pg, up, down);
-            sum_ortho = svadd_f64_z(pg, sum_ortho, left);
-            sum_ortho = svadd_f64_z(pg, sum_ortho, right);
-            
-            svfloat64_t sum_diag = svadd_f64_z(pg, up_left, up_right);
-            sum_diag = svadd_f64_z(pg, sum_diag, down_left);
-            sum_diag = svadd_f64_z(pg, sum_diag, down_right);
-            sum_diag = svmul_f64_z(pg, sum_diag, svdup_f64(0.5));
-            
-            svfloat64_t total = svadd_f64_z(pg, center_weighted, sum_ortho);
-            total = svadd_f64_z(pg, total, sum_diag);
-            svfloat64_t result = svmul_f64_z(pg, total, svdup_f64(0.125));
-            
+            svfloat64_t result = svmul_f64_z(pg, sum, eighth_vec);
             svst1_f64(pg, &new_grid[i * cols + j], result);
         }
     }
 }
 
 // 3D Stencil 计算 - 7点模板
-void stencil3D_7point_sve(double* grid, double* new_grid, int depth, int rows, int cols) __arm_streaming {
-    uint64_t VL = svcntd();
+// 使用 SVE 向量化 + SME 流模式 + MOPA 外积累加
+void stencil3D_7point_sme(double* __restrict__ grid, double* __restrict__ new_grid, int depth, int rows, int cols) 
+    __arm_streaming __arm_new("za") {
+    
+    uint64_t SVL = svcntd();
     int plane_size = rows * cols;
-
+    svfloat64_t one_vec = svdup_f64(1.0);
+    svfloat64_t sixth_vec = svdup_f64(1.0 / 6.0);
+    svbool_t pg_all = svptrue_b64();
+    
     for (int k = 1; k < depth - 1; k++) {
         for (int i = 1; i < rows - 1; i++) {
-            for (int j = 1; j < cols - 1; j += VL) {
+            for (int j = 1; j < cols - 1; j += SVL) {
                 svbool_t pg = svwhilelt_b64(j, cols - 1);
-                
-                int idx = k * plane_size + i * cols + j;
                 
                 svfloat64_t front = svld1_f64(pg, &grid[(k - 1) * plane_size + i * cols + j]);
                 svfloat64_t back = svld1_f64(pg, &grid[(k + 1) * plane_size + i * cols + j]);
                 svfloat64_t up = svld1_f64(pg, &grid[k * plane_size + (i - 1) * cols + j]);
                 svfloat64_t down = svld1_f64(pg, &grid[k * plane_size + (i + 1) * cols + j]);
-                svfloat64_t left = svld1_f64(pg, &grid[idx - 1]);
-                svfloat64_t right = svld1_f64(pg, &grid[idx + 1]);
+                svfloat64_t left = svld1_f64(pg, &grid[k * plane_size + i * cols + j - 1]);
+                svfloat64_t right = svld1_f64(pg, &grid[k * plane_size + i * cols + j + 1]);
                 
-                svfloat64_t sum = svadd_f64_z(pg, front, back);
-                sum = svadd_f64_z(pg, sum, up);
-                sum = svadd_f64_z(pg, sum, down);
-                sum = svadd_f64_z(pg, sum, left);
-                sum = svadd_f64_z(pg, sum, right);
-                svfloat64_t result = svmul_f64_z(pg, sum, svdup_f64(1.0 / 6.0));
+                svfloat64_t sum = svmopa_za64_f64(1, pg_all, pg, front, one_vec);
+                sum = svmopa_za64_f64(0, pg_all, pg, back, one_vec);
+                sum = svmopa_za64_f64(0, pg_all, pg, up, one_vec);
+                sum = svmopa_za64_f64(0, pg_all, pg, down, one_vec);
+                sum = svmopa_za64_f64(0, pg_all, pg, left, one_vec);
+                sum = svmopa_za64_f64(0, pg_all, pg, right, one_vec);
                 
-                svst1_f64(pg, &new_grid[idx], result);
+                svfloat64_t result = svmul_f64_z(pg, sum, sixth_vec);
+                svst1_f64(pg, &new_grid[k * plane_size + i * cols + j], result);
             }
         }
     }
@@ -205,7 +215,7 @@ int main() {
     auto start = chrono::high_resolution_clock::now();
     
     for (int iter = 0; iter < ITERATIONS; iter++) {
-        stencil2D_5point_sve(grid_2d, new_grid_2d, ROWS, COLS);
+        stencil2D_5point_sme(grid_2d, new_grid_2d, ROWS, COLS);
         
         // 交换网格
         swap(grid_2d, new_grid_2d);
@@ -239,7 +249,7 @@ int main() {
     start = chrono::high_resolution_clock::now();
     
     for (int iter = 0; iter < ITERATIONS; iter++) {
-        stencil2D_9point_sve(grid_2d, new_grid_2d, ROWS, COLS);
+        stencil2D_9point_sme(grid_2d, new_grid_2d, ROWS, COLS);
         swap(grid_2d, new_grid_2d);
     }
     
@@ -267,7 +277,7 @@ int main() {
     start = chrono::high_resolution_clock::now();
     
     for (int iter = 0; iter < ITERATIONS_3D; iter++) {
-        stencil3D_7point_sve(grid_3d, new_grid_3d, DEPTH, ROWS, COLS);
+        stencil3D_7point_sme(grid_3d, new_grid_3d, DEPTH, ROWS, COLS);
         swap(grid_3d, new_grid_3d);
     }
     
@@ -291,7 +301,7 @@ int main() {
     
     // 执行5次迭代
     for (int iter = 0; iter < 5; iter++) {
-        stencil2D_5point_sve(small_grid, small_new_grid, SMALL_SIZE, SMALL_SIZE);
+        stencil2D_5point_sme(small_grid, small_new_grid, SMALL_SIZE, SMALL_SIZE);
         swap(small_grid, small_new_grid);
         cout << "第 " << (iter + 1) << " 次迭代后:" << endl;
         printGrid(small_grid, SMALL_SIZE, SMALL_SIZE);
