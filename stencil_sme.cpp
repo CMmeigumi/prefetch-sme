@@ -12,14 +12,22 @@ using namespace std;
 
 // 2D Stencil 计算 - 5点模板（热传导方程）
 // 使用 SVE 向量化 + SME 流模式 + MOPA 外积累加
+// 策略：基向量 e_k 作 zn，邻居作 zm，4个邻居存入 ZA 的 4 个 slice，读出求和
 __arm_new("za")
 void stencil2D_5point_sme(double* __restrict__ grid, double* __restrict__ new_grid, int rows, int cols) 
     __arm_streaming {
     
     uint64_t SVL = svcntd();
-    svfloat64_t one_vec = svdup_f64(1.0);
     svfloat64_t quarter_vec = svdup_f64(0.25);
     svbool_t pg_all = svptrue_b64();
+    
+    svfloat64_t idx = svindex_f64(0, 1);
+    svfloat64_t zero = svdup_f64(0);
+    svfloat64_t one = svdup_f64(1.0);
+    svfloat64_t e0 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 0), one, zero);
+    svfloat64_t e1 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 1), one, zero);
+    svfloat64_t e2 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 2), one, zero);
+    svfloat64_t e3 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 3), one, zero);
     
     for (int i = 1; i < rows - 1; i++) {
         for (int j = 1; j < cols - 1; j += SVL) {
@@ -30,12 +38,18 @@ void stencil2D_5point_sme(double* __restrict__ grid, double* __restrict__ new_gr
             svfloat64_t left = svld1_f64(pg, &grid[i * cols + j - 1]);
             svfloat64_t right = svld1_f64(pg, &grid[i * cols + j + 1]);
             
-            svmopa_za64_f64_m(0, pg_all, pg, up, one_vec);
-            svmopa_za64_f64_m(0, pg_all, pg, down, one_vec);
-            svmopa_za64_f64_m(0, pg_all, pg, left, one_vec);
-            svmopa_za64_f64_m(0, pg_all, pg, right, one_vec);
+            svzero_za();
+            
+            svmopa_za64_f64_m(0, pg_all, pg, e0, up);
+            svmopa_za64_f64_m(0, pg_all, pg, e1, down);
+            svmopa_za64_f64_m(0, pg_all, pg, e2, left);
+            svmopa_za64_f64_m(0, pg_all, pg, e3, right);
             
             svfloat64_t sum = svread_hor_za64_m(svundef_f64(), pg_all, 0, 0);
+            sum = svadd_f64_z(pg, sum, svread_hor_za64_m(svundef_f64(), pg_all, 0, 1));
+            sum = svadd_f64_z(pg, sum, svread_hor_za64_m(svundef_f64(), pg_all, 0, 2));
+            sum = svadd_f64_z(pg, sum, svread_hor_za64_m(svundef_f64(), pg_all, 0, 3));
+            
             svfloat64_t result = svmul_f64_z(pg, sum, quarter_vec);
             svst1_f64(pg, &new_grid[i * cols + j], result);
         }
@@ -44,6 +58,7 @@ void stencil2D_5point_sme(double* __restrict__ grid, double* __restrict__ new_gr
 
 // 2D Stencil 计算 - 9点模板（更精确的拉普拉斯算子）
 // 使用 SVE 向量化 + SME 流模式 + MOPA 外积累加
+// 策略：9项全部 MOPA 累加到 ZA（同行值相同），读出4个 slice 后用基向量提取对角线
 __arm_new("za")
 void stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_grid, int rows, int cols) 
     __arm_streaming {
@@ -54,6 +69,14 @@ void stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_gr
     svfloat64_t half_vec = svdup_f64(0.5);
     svfloat64_t eighth_vec = svdup_f64(0.125);
     svbool_t pg_all = svptrue_b64();
+    
+    svfloat64_t idx = svindex_f64(0, 1);
+    svfloat64_t zero = svdup_f64(0);
+    svfloat64_t one = svdup_f64(1.0);
+    svfloat64_t e0 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 0), one, zero);
+    svfloat64_t e1 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 1), one, zero);
+    svfloat64_t e2 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 2), one, zero);
+    svfloat64_t e3 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 3), one, zero);
     
     for (int i = 1; i < rows - 1; i++) {
         for (int j = 1; j < cols - 1; j += SVL) {
@@ -69,6 +92,8 @@ void stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_gr
             svfloat64_t down_left = svld1_f64(pg, &grid[(i + 1) * cols + j - 1]);
             svfloat64_t down_right = svld1_f64(pg, &grid[(i + 1) * cols + j + 1]);
             
+            svzero_za();
+            
             svmopa_za64_f64_m(0, pg_all, pg, center, four_vec);
             svmopa_za64_f64_m(0, pg_all, pg, up, one_vec);
             svmopa_za64_f64_m(0, pg_all, pg, down, one_vec);
@@ -79,7 +104,16 @@ void stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_gr
             svmopa_za64_f64_m(0, pg_all, pg, down_left, half_vec);
             svmopa_za64_f64_m(0, pg_all, pg, down_right, half_vec);
             
-            svfloat64_t sum = svread_hor_za64_m(svundef_f64(), pg_all, 0, 0);
+            svfloat64_t s0 = svread_hor_za64_m(svundef_f64(), pg_all, 0, 0);
+            svfloat64_t s1 = svread_hor_za64_m(svundef_f64(), pg_all, 0, 1);
+            svfloat64_t s2 = svread_hor_za64_m(svundef_f64(), pg_all, 0, 2);
+            svfloat64_t s3 = svread_hor_za64_m(svundef_f64(), pg_all, 0, 3);
+            
+            svfloat64_t sum = svmul_f64_z(pg, s0, e0);
+            sum = svmla_f64_z(pg, sum, s1, e1);
+            sum = svmla_f64_z(pg, sum, s2, e2);
+            sum = svmla_f64_z(pg, sum, s3, e3);
+            
             svfloat64_t result = svmul_f64_z(pg, sum, eighth_vec);
             svst1_f64(pg, &new_grid[i * cols + j], result);
         }
@@ -88,6 +122,7 @@ void stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_gr
 
 // 3D Stencil 计算 - 7点模板
 // 使用 SVE 向量化 + SME 流模式 + MOPA 外积累加
+// 策略：6项全部 MOPA 累加到 ZA（同行值相同），读出4个 slice 后用基向量提取对角线
 __arm_new("za")
 void stencil3D_7point_sme(double* __restrict__ grid, double* __restrict__ new_grid, int depth, int rows, int cols) 
     __arm_streaming {
@@ -97,6 +132,14 @@ void stencil3D_7point_sme(double* __restrict__ grid, double* __restrict__ new_gr
     svfloat64_t one_vec = svdup_f64(1.0);
     svfloat64_t sixth_vec = svdup_f64(1.0 / 6.0);
     svbool_t pg_all = svptrue_b64();
+    
+    svfloat64_t idx = svindex_f64(0, 1);
+    svfloat64_t zero = svdup_f64(0);
+    svfloat64_t one = svdup_f64(1.0);
+    svfloat64_t e0 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 0), one, zero);
+    svfloat64_t e1 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 1), one, zero);
+    svfloat64_t e2 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 2), one, zero);
+    svfloat64_t e3 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 3), one, zero);
     
     for (int k = 1; k < depth - 1; k++) {
         for (int i = 1; i < rows - 1; i++) {
@@ -110,6 +153,8 @@ void stencil3D_7point_sme(double* __restrict__ grid, double* __restrict__ new_gr
                 svfloat64_t left = svld1_f64(pg, &grid[k * plane_size + i * cols + j - 1]);
                 svfloat64_t right = svld1_f64(pg, &grid[k * plane_size + i * cols + j + 1]);
                 
+                svzero_za();
+                
                 svmopa_za64_f64_m(0, pg_all, pg, front, one_vec);
                 svmopa_za64_f64_m(0, pg_all, pg, back, one_vec);
                 svmopa_za64_f64_m(0, pg_all, pg, up, one_vec);
@@ -117,7 +162,16 @@ void stencil3D_7point_sme(double* __restrict__ grid, double* __restrict__ new_gr
                 svmopa_za64_f64_m(0, pg_all, pg, left, one_vec);
                 svmopa_za64_f64_m(0, pg_all, pg, right, one_vec);
                 
-                svfloat64_t sum = svread_hor_za64_m(svundef_f64(), pg_all, 0, 0);
+                svfloat64_t s0 = svread_hor_za64_m(svundef_f64(), pg_all, 0, 0);
+                svfloat64_t s1 = svread_hor_za64_m(svundef_f64(), pg_all, 0, 1);
+                svfloat64_t s2 = svread_hor_za64_m(svundef_f64(), pg_all, 0, 2);
+                svfloat64_t s3 = svread_hor_za64_m(svundef_f64(), pg_all, 0, 3);
+                
+                svfloat64_t sum = svmul_f64_z(pg, s0, e0);
+                sum = svmla_f64_z(pg, sum, s1, e1);
+                sum = svmla_f64_z(pg, sum, s2, e2);
+                sum = svmla_f64_z(pg, sum, s3, e3);
+                
                 svfloat64_t result = svmul_f64_z(pg, sum, sixth_vec);
                 svst1_f64(pg, &new_grid[k * plane_size + i * cols + j], result);
             }
