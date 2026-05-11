@@ -1,0 +1,4 @@
+https://kunpeng-repo.obs.cn-north-4.myhuaweicloud.com/Kunpeng%20DevKit/Kunpeng%20DevKit%2026.0.RC1/DevKit-CLI-26.0.RC1-Linux-Kunpeng.tar.gz
+
+https://kunpeng-repo.obs.cn-north-4.myhuaweicloud.com/BiSheng%20Enterprise/BiSheng%20Enterprise%20205.2.0.2/BiShengCompiler-5.1.0.2-aarch64-linux.tar.gz
+
