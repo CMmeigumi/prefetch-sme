@@ -222,9 +222,9 @@ int main() {
     cout << "【测试1】2D 5点 Stencil 模板" << endl;
     cout << "----------------------------------------" << endl;
     
-    const int ROWS = 128;
-    const int COLS = 128;
-    const int ITERATIONS = 1000;
+    const int ROWS = 512;
+    const int COLS = 512;
+    const int ITERATIONS = 100;
     
     double* grid_2d = (double*)aligned_alloc(64, ROWS * COLS * sizeof(double));
     double* new_grid_2d = (double*)aligned_alloc(64, ROWS * COLS * sizeof(double));
@@ -287,8 +287,8 @@ int main() {
     cout << "【测试3】3D 7点 Stencil 模板" << endl;
     cout << "----------------------------------------" << endl;
     
-    const int DEPTH = 64;
-    const int ITERATIONS_3D = 100;
+    const int DEPTH = 128;
+    const int ITERATIONS_3D = 20;
     
     double* grid_3d = (double*)aligned_alloc(64, DEPTH * ROWS * COLS * sizeof(double));
     double* new_grid_3d = (double*)aligned_alloc(64, DEPTH * ROWS * COLS * sizeof(double));
