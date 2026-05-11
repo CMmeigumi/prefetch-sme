@@ -35,7 +35,7 @@ void stencil2D_5point_sme(double* __restrict__ grid, double* __restrict__ new_gr
             svmopa_za64_f64_m(0, pg_all, pg, left, one_vec);
             svmopa_za64_f64_m(0, pg_all, pg, right, one_vec);
             
-            svfloat64_t sum = svld1_hor_za64_f64(pg_all);
+            svfloat64_t sum = svld1_hor_za64(pg_all);
             svfloat64_t result = svmul_f64_z(pg, sum, quarter_vec);
             svst1_f64(pg, &new_grid[i * cols + j], result);
         }
@@ -79,7 +79,7 @@ void stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_gr
             svmopa_za64_f64_m(0, pg_all, pg, down_left, half_vec);
             svmopa_za64_f64_m(0, pg_all, pg, down_right, half_vec);
             
-            svfloat64_t sum = svld1_hor_za64_f64(pg_all);
+            svfloat64_t sum = svld1_hor_za64(pg_all);
             svfloat64_t result = svmul_f64_z(pg, sum, eighth_vec);
             svst1_f64(pg, &new_grid[i * cols + j], result);
         }
@@ -117,7 +117,7 @@ void stencil3D_7point_sme(double* __restrict__ grid, double* __restrict__ new_gr
                 svmopa_za64_f64_m(0, pg_all, pg, left, one_vec);
                 svmopa_za64_f64_m(0, pg_all, pg, right, one_vec);
                 
-                svfloat64_t sum = svld1_hor_za64_f64(pg_all);
+                svfloat64_t sum = svld1_hor_za64(pg_all);
                 svfloat64_t result = svmul_f64_z(pg, sum, sixth_vec);
                 svst1_f64(pg, &new_grid[k * plane_size + i * cols + j], result);
             }
