@@ -30,11 +30,12 @@ void stencil2D_5point_sme(double* __restrict__ grid, double* __restrict__ new_gr
             svfloat64_t left = svld1_f64(pg, &grid[i * cols + j - 1]);
             svfloat64_t right = svld1_f64(pg, &grid[i * cols + j + 1]);
             
-            svfloat64_t sum = svmopa_za64_f64_m(1, pg_all, pg, up, one_vec);
-            sum = svmopa_za64_f64_m(0, pg_all, pg, down, one_vec);
-            sum = svmopa_za64_f64_m(0, pg_all, pg, left, one_vec);
-            sum = svmopa_za64_f64_m(0, pg_all, pg, right, one_vec);
+            svmopa_za64_f64_m(1, pg_all, pg, up, one_vec);
+            svmopa_za64_f64_m(0, pg_all, pg, down, one_vec);
+            svmopa_za64_f64_m(0, pg_all, pg, left, one_vec);
+            svmopa_za64_f64_m(0, pg_all, pg, right, one_vec);
             
+            svfloat64_t sum = svldr_za_vnum_f64(0, pg_all, 0);
             svfloat64_t result = svmul_f64_z(pg, sum, quarter_vec);
             svst1_f64(pg, &new_grid[i * cols + j], result);
         }
@@ -68,16 +69,17 @@ void stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_gr
             svfloat64_t down_left = svld1_f64(pg, &grid[(i + 1) * cols + j - 1]);
             svfloat64_t down_right = svld1_f64(pg, &grid[(i + 1) * cols + j + 1]);
             
-            svfloat64_t sum = svmopa_za64_f64_m(1, pg_all, pg, center, four_vec);
-            sum = svmopa_za64_f64_m(0, pg_all, pg, up, one_vec);
-            sum = svmopa_za64_f64_m(0, pg_all, pg, down, one_vec);
-            sum = svmopa_za64_f64_m(0, pg_all, pg, left, one_vec);
-            sum = svmopa_za64_f64_m(0, pg_all, pg, right, one_vec);
-            sum = svmopa_za64_f64_m(0, pg_all, pg, up_left, half_vec);
-            sum = svmopa_za64_f64_m(0, pg_all, pg, up_right, half_vec);
-            sum = svmopa_za64_f64_m(0, pg_all, pg, down_left, half_vec);
-            sum = svmopa_za64_f64_m(0, pg_all, pg, down_right, half_vec);
+            svmopa_za64_f64_m(1, pg_all, pg, center, four_vec);
+            svmopa_za64_f64_m(0, pg_all, pg, up, one_vec);
+            svmopa_za64_f64_m(0, pg_all, pg, down, one_vec);
+            svmopa_za64_f64_m(0, pg_all, pg, left, one_vec);
+            svmopa_za64_f64_m(0, pg_all, pg, right, one_vec);
+            svmopa_za64_f64_m(0, pg_all, pg, up_left, half_vec);
+            svmopa_za64_f64_m(0, pg_all, pg, up_right, half_vec);
+            svmopa_za64_f64_m(0, pg_all, pg, down_left, half_vec);
+            svmopa_za64_f64_m(0, pg_all, pg, down_right, half_vec);
             
+            svfloat64_t sum = svldr_za_vnum_f64(0, pg_all, 0);
             svfloat64_t result = svmul_f64_z(pg, sum, eighth_vec);
             svst1_f64(pg, &new_grid[i * cols + j], result);
         }
@@ -108,13 +110,14 @@ void stencil3D_7point_sme(double* __restrict__ grid, double* __restrict__ new_gr
                 svfloat64_t left = svld1_f64(pg, &grid[k * plane_size + i * cols + j - 1]);
                 svfloat64_t right = svld1_f64(pg, &grid[k * plane_size + i * cols + j + 1]);
                 
-                svfloat64_t sum = svmopa_za64_f64_m(1, pg_all, pg, front, one_vec);
-                sum = svmopa_za64_f64_m(0, pg_all, pg, back, one_vec);
-                sum = svmopa_za64_f64_m(0, pg_all, pg, up, one_vec);
-                sum = svmopa_za64_f64_m(0, pg_all, pg, down, one_vec);
-                sum = svmopa_za64_f64_m(0, pg_all, pg, left, one_vec);
-                sum = svmopa_za64_f64_m(0, pg_all, pg, right, one_vec);
+                svmopa_za64_f64_m(1, pg_all, pg, front, one_vec);
+                svmopa_za64_f64_m(0, pg_all, pg, back, one_vec);
+                svmopa_za64_f64_m(0, pg_all, pg, up, one_vec);
+                svmopa_za64_f64_m(0, pg_all, pg, down, one_vec);
+                svmopa_za64_f64_m(0, pg_all, pg, left, one_vec);
+                svmopa_za64_f64_m(0, pg_all, pg, right, one_vec);
                 
+                svfloat64_t sum = svldr_za_vnum_f64(0, pg_all, 0);
                 svfloat64_t result = svmul_f64_z(pg, sum, sixth_vec);
                 svst1_f64(pg, &new_grid[k * plane_size + i * cols + j], result);
             }
