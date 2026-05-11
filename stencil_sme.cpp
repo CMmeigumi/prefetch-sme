@@ -21,13 +21,13 @@ void stencil2D_5point_sme(double* __restrict__ grid, double* __restrict__ new_gr
     svfloat64_t quarter_vec = svdup_f64(0.25);
     svbool_t pg_all = svptrue_b64();
     
-    svfloat64_t idx = svindex_f64(0, 1);
+    svint64_t idx = svindex_s64(0, 1);
     svfloat64_t zero = svdup_f64(0);
     svfloat64_t one = svdup_f64(1.0);
-    svfloat64_t e0 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 0), one, zero);
-    svfloat64_t e1 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 1), one, zero);
-    svfloat64_t e2 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 2), one, zero);
-    svfloat64_t e3 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 3), one, zero);
+    svfloat64_t e0 = svsel_f64(svcmpeq_n_s64(pg_all, idx, 0), one, zero);
+    svfloat64_t e1 = svsel_f64(svcmpeq_n_s64(pg_all, idx, 1), one, zero);
+    svfloat64_t e2 = svsel_f64(svcmpeq_n_s64(pg_all, idx, 2), one, zero);
+    svfloat64_t e3 = svsel_f64(svcmpeq_n_s64(pg_all, idx, 3), one, zero);
     
     for (int i = 1; i < rows - 1; i++) {
         for (int j = 1; j < cols - 1; j += SVL) {
@@ -70,13 +70,13 @@ void stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_gr
     svfloat64_t eighth_vec = svdup_f64(0.125);
     svbool_t pg_all = svptrue_b64();
     
-    svfloat64_t idx = svindex_f64(0, 1);
+    svint64_t idx = svindex_s64(0, 1);
     svfloat64_t zero = svdup_f64(0);
     svfloat64_t one = svdup_f64(1.0);
-    svfloat64_t e0 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 0), one, zero);
-    svfloat64_t e1 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 1), one, zero);
-    svfloat64_t e2 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 2), one, zero);
-    svfloat64_t e3 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 3), one, zero);
+    svfloat64_t e0 = svsel_f64(svcmpeq_n_s64(pg_all, idx, 0), one, zero);
+    svfloat64_t e1 = svsel_f64(svcmpeq_n_s64(pg_all, idx, 1), one, zero);
+    svfloat64_t e2 = svsel_f64(svcmpeq_n_s64(pg_all, idx, 2), one, zero);
+    svfloat64_t e3 = svsel_f64(svcmpeq_n_s64(pg_all, idx, 3), one, zero);
     
     for (int i = 1; i < rows - 1; i++) {
         for (int j = 1; j < cols - 1; j += SVL) {
@@ -133,13 +133,13 @@ void stencil3D_7point_sme(double* __restrict__ grid, double* __restrict__ new_gr
     svfloat64_t sixth_vec = svdup_f64(1.0 / 6.0);
     svbool_t pg_all = svptrue_b64();
     
-    svfloat64_t idx = svindex_f64(0, 1);
+    svint64_t idx = svindex_s64(0, 1);
     svfloat64_t zero = svdup_f64(0);
     svfloat64_t one = svdup_f64(1.0);
-    svfloat64_t e0 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 0), one, zero);
-    svfloat64_t e1 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 1), one, zero);
-    svfloat64_t e2 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 2), one, zero);
-    svfloat64_t e3 = svsel_f64(svcmpeq_n_f64(pg_all, idx, 3), one, zero);
+    svfloat64_t e0 = svsel_f64(svcmpeq_n_s64(pg_all, idx, 0), one, zero);
+    svfloat64_t e1 = svsel_f64(svcmpeq_n_s64(pg_all, idx, 1), one, zero);
+    svfloat64_t e2 = svsel_f64(svcmpeq_n_s64(pg_all, idx, 2), one, zero);
+    svfloat64_t e3 = svsel_f64(svcmpeq_n_s64(pg_all, idx, 3), one, zero);
     
     for (int k = 1; k < depth - 1; k++) {
         for (int i = 1; i < rows - 1; i++) {
