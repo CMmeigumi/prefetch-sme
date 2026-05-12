@@ -3,7 +3,7 @@
 
 CXX = clang++
 CXXFLAGS = -O3 -mcpu=hip11 -std=c++17 -rtlib=compiler-rt
-LDFLAGS = -lm
+LDFLAGS = -lm -lgcc_s
 
 # All stencil variants
 STENCILS = 3d_27 3d_13 3d_25 2d_9 2d_5 1d_3
