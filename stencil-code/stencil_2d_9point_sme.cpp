@@ -1,0 +1,51 @@
+// ARM SME 2D 9-point Stencil 实现
+// 形状：3×3 正方形 (中心及8个邻点)
+// 应用：2D波动方程、图像处理
+
+#include "stencil_2d_9point.h"
+
+__arm_new("za")
+void stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
+                            int rows, int cols, int stride)
+    __arm_streaming {
+
+    uint64_t SVL = svcntd();
+    svfloat64_t weight_vec = svdup_f64(1.0 / 9.0);
+    svfloat64_t ones = svdup_f64(1.0);
+    svbool_t pg_all = svptrue_b64();
+
+    for (int i = 1; i < rows - 1; i += stride) {
+        for (int j = 1; j < cols - 1; j += SVL * stride) {
+            svbool_t pg = svwhilelt_b64(j, cols - 1);
+            int base_idx = i * cols + j;
+
+            svfloat64_t im1_jm1 = svld1_f64(pg, &grid[(i-1) * cols + (j-1)]);
+            svfloat64_t im1_j0 = svld1_f64(pg, &grid[(i-1) * cols + j]);
+            svfloat64_t im1_jp1 = svld1_f64(pg, &grid[(i-1) * cols + (j+1)]);
+
+            svfloat64_t i0_jm1 = svld1_f64(pg, &grid[i * cols + (j-1)]);
+            svfloat64_t center = svld1_f64(pg, &grid[i * cols + j]);
+            svfloat64_t i0_jp1 = svld1_f64(pg, &grid[i * cols + (j+1)]);
+
+            svfloat64_t ip1_jm1 = svld1_f64(pg, &grid[(i+1) * cols + (j-1)]);
+            svfloat64_t ip1_j0 = svld1_f64(pg, &grid[(i+1) * cols + j]);
+            svfloat64_t ip1_jp1 = svld1_f64(pg, &grid[(i+1) * cols + (j+1)]);
+
+            svzero_za();
+
+            svmopa_za64_f64_m(0, pg_all, pg, ones, im1_jm1);
+            svmopa_za64_f64_m(0, pg_all, pg, ones, im1_j0);
+            svmopa_za64_f64_m(0, pg_all, pg, ones, im1_jp1);
+            svmopa_za64_f64_m(0, pg_all, pg, ones, i0_jm1);
+            svmopa_za64_f64_m(0, pg_all, pg, ones, center);
+            svmopa_za64_f64_m(0, pg_all, pg, ones, i0_jp1);
+            svmopa_za64_f64_m(0, pg_all, pg, ones, ip1_jm1);
+            svmopa_za64_f64_m(0, pg_all, pg, ones, ip1_j0);
+            svmopa_za64_f64_m(0, pg_all, pg, ones, ip1_jp1);
+
+            svfloat64_t sum = svread_hor_za64_m(svundef_f64(), pg_all, 0, 0);
+            svfloat64_t result = svmul_f64_z(pg, sum, weight_vec);
+            svst1_f64(pg, &new_grid[base_idx], result);
+        }
+    }
+}
