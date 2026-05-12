@@ -12,8 +12,8 @@ void stencil2D_9point_scalar(double* __restrict__ grid, double* __restrict__ new
                              int rows, int cols, int stride);
 
 #ifdef __ARM_FEATURE_SME
-void stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
-                            int rows, int cols, int stride);
+void __arm_new("za") stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
+                            int rows, int cols, int stride) __arm_streaming;
 #endif
 
 void initializeGrid2D(double* grid, int rows, int cols);

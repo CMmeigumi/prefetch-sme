@@ -12,8 +12,8 @@ void stencil3D_13point_scalar(double* __restrict__ grid, double* __restrict__ ne
                               int depth, int rows, int cols, int stride);
 
 #ifdef __ARM_FEATURE_SME
-void stencil3D_13point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
-                           int depth, int rows, int cols, int stride);
+void __arm_new("za") stencil3D_13point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
+                           int depth, int rows, int cols, int stride) __arm_streaming;
 #endif
 
 void initializeGrid3D(double* grid, int depth, int rows, int cols);
