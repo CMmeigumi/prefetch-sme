@@ -65,6 +65,10 @@ int main() {
     initializeGrid1D(g1, SIZE);
     initializeGrid1D(g3, SIZE);
 
+    cout << "【初始化后】" << endl;
+    printSamplePoints(g1, "标量", SIZE);
+    cout << "  初始平均: " << fixed << setprecision(6) << computeAverage1D(g1, SIZE) << endl << endl;
+
     stencil1D_3point_scalar(g1, g2, SIZE, 1);
     stencil1D_3point_sme(g3, g4, SIZE, 1);
 
@@ -78,6 +82,12 @@ int main() {
 
     CompareResult r = compareGrids1D(g2, g4, SIZE);
     printCompareResult(r, "单次迭代");
+
+    if (r.passed) {
+        cout << "  结果: 标量与SME版本输出完全一致!" << endl;
+    } else {
+        cout << "  警告: 标量与SME版本输出存在差异!" << endl;
+    }
 
     free(g1); free(g2); free(g3); free(g4);
     return r.passed ? 0 : 1;

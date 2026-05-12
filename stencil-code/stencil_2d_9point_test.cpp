@@ -71,6 +71,10 @@ int main() {
     initializeGrid2D(g1, ROWS, COLS);
     initializeGrid2D(g3, ROWS, COLS);
 
+    cout << "【初始化后】" << endl;
+    printSamplePoints(g1, "标量", ROWS, COLS);
+    cout << "  初始平均: " << fixed << setprecision(6) << computeAverage2D(g1, ROWS, COLS) << endl << endl;
+
     stencil2D_9point_scalar(g1, g2, ROWS, COLS, 1);
     stencil2D_9point_sme(g3, g4, ROWS, COLS, 1);
 
@@ -84,6 +88,12 @@ int main() {
 
     CompareResult r = compareGrids2D(g2, g4, ROWS, COLS);
     printCompareResult(r, "单次迭代");
+
+    if (r.passed) {
+        cout << "  结果: 标量与SME版本输出完全一致!" << endl;
+    } else {
+        cout << "  警告: 标量与SME版本输出存在差异!" << endl;
+    }
 
     free(g1); free(g2); free(g3); free(g4);
     return r.passed ? 0 : 1;

@@ -1,7 +1,6 @@
 // 3D 25-point Stencil 正确性对比测试
 
 #include <iostream>
-#include <chrono>
 #include <iomanip>
 #include "stencil_3d_25point.h"
 
@@ -77,6 +76,10 @@ int main() {
     initializeGrid3D(g1, DEPTH, ROWS, COLS);
     initializeGrid3D(g3, DEPTH, ROWS, COLS);
 
+    cout << "【初始化后】" << endl;
+    printSamplePoints(g1, "标量", DEPTH, ROWS, COLS);
+    cout << "  初始平均: " << fixed << setprecision(6) << computeAverage3D(g1, DEPTH, ROWS, COLS) << endl << endl;
+
     stencil3D_25point_scalar(g1, g2, DEPTH, ROWS, COLS, 1);
     stencil3D_25point_sme(g3, g4, DEPTH, ROWS, COLS, 1);
 
@@ -90,6 +93,12 @@ int main() {
 
     CompareResult r = compareGrids3D(g2, g4, DEPTH, ROWS, COLS);
     printCompareResult(r, "单次迭代");
+
+    if (r.passed) {
+        cout << "  结果: 标量与SME版本输出完全一致!" << endl;
+    } else {
+        cout << "  警告: 标量与SME版本输出存在差异!" << endl;
+    }
 
     free(g1); free(g2); free(g3); free(g4);
     return r.passed ? 0 : 1;

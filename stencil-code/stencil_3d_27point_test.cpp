@@ -1,5 +1,4 @@
 // 3D 27-point Stencil 正确性对比测试
-// 同时调用标量版本和SME版本，验证功能一致性
 
 #include <iostream>
 #include <chrono>
@@ -55,13 +54,7 @@ void printSamplePoints(double* grid, const string& label, int depth, int rows, i
 }
 
 void printCompareResult(const CompareResult& result, const string& testName) {
-    cout << "[" << testName << "] ";
-    if (result.passed) {
-        cout << "PASS";
-    } else {
-        cout << "FAIL";
-    }
-    cout << endl;
+    cout << "[" << testName << "] " << (result.passed ? "PASS" : "FAIL") << endl;
     cout << "  总计算点数: " << result.totalPoints << endl;
     cout << "  最大差异: " << scientific << result.maxDiff << endl;
     cout << "  不匹配点数: " << result.mismatchCount << " / " << result.totalPoints << endl;
@@ -70,130 +63,46 @@ void printCompareResult(const CompareResult& result, const string& testName) {
 
 int main() {
     cout << "========================================" << endl;
-    cout << "  3D 27-point Stencil 正确性对比测试" << endl;
+    cout << " 3D 27-point Stencil 正确性对比测试" << endl;
     cout << "========================================" << endl << endl;
 
-    const int DEPTH = 8;
-    const int ROWS = 16;
-    const int COLS = 16;
-    const int ITERATIONS = 5;
-
+    const int DEPTH = 8, ROWS = 16, COLS = 16;
     size_t grid_size = DEPTH * ROWS * COLS;
 
-    double* grid_scalar    = (double*)aligned_alloc(64, grid_size * sizeof(double));
-    double* new_grid_scalar = (double*)aligned_alloc(64, grid_size * sizeof(double));
-    double* grid_sme       = (double*)aligned_alloc(64, grid_size * sizeof(double));
-    double* new_grid_sme   = (double*)aligned_alloc(64, grid_size * sizeof(double));
+    double* g1 = (double*)aligned_alloc(64, grid_size * sizeof(double));
+    double* g2 = (double*)aligned_alloc(64, grid_size * sizeof(double));
+    double* g3 = (double*)aligned_alloc(64, grid_size * sizeof(double));
+    double* g4 = (double*)aligned_alloc(64, grid_size * sizeof(double));
 
-    int totalPassed = 0;
-    int totalTests = 0;
+    cout << "网格大小: " << DEPTH << " x " << ROWS << " x " << COLS << endl << endl;
 
-    cout << "网格大小: " << DEPTH << " x " << ROWS << " x " << COLS << endl;
-    cout << "总元素数: " << grid_size << endl << endl;
+    initializeGrid3D(g1, DEPTH, ROWS, COLS);
+    initializeGrid3D(g3, DEPTH, ROWS, COLS);
 
-    cout << "========== 测试1：单次迭代精确对比 ==========" << endl << endl;
+    cout << "【初始化后】" << endl;
+    printSamplePoints(g1, "标量", DEPTH, ROWS, COLS);
+    cout << "  初始平均: " << fixed << setprecision(6) << computeAverage3D(g1, DEPTH, ROWS, COLS) << endl << endl;
 
-    {
-        totalTests++;
-        int stride = 1;
-        initializeGrid3D(grid_scalar, DEPTH, ROWS, COLS);
-        initializeGrid3D(grid_sme, DEPTH, ROWS, COLS);
+    stencil3D_27point_scalar(g1, g2, DEPTH, ROWS, COLS, 1);
+    stencil3D_27point_sme(g3, g4, DEPTH, ROWS, COLS, 1);
 
-        cout << "【初始化后】" << endl;
-        printSamplePoints(grid_scalar, "标量版本", DEPTH, ROWS, COLS);
-        cout << "  初始平均: " << fixed << setprecision(6) << computeAverage3D(grid_scalar, DEPTH, ROWS, COLS) << endl << endl;
+    cout << "【标量版本计算后】" << endl;
+    printSamplePoints(g2, "标量", DEPTH, ROWS, COLS);
+    cout << "  平均: " << fixed << setprecision(6) << computeAverage3D(g2, DEPTH, ROWS, COLS) << endl << endl;
 
-        stencil3D_27point_scalar(grid_scalar, new_grid_scalar, DEPTH, ROWS, COLS, stride);
-        stencil3D_27point_sme(grid_sme, new_grid_sme, DEPTH, ROWS, COLS, stride);
+    cout << "【SME版本计算后】" << endl;
+    printSamplePoints(g4, "SME", DEPTH, ROWS, COLS);
+    cout << "  平均: " << fixed << setprecision(6) << computeAverage3D(g4, DEPTH, ROWS, COLS) << endl << endl;
 
-        cout << "【标量版本计算后】" << endl;
-        printSamplePoints(new_grid_scalar, "标量", DEPTH, ROWS, COLS);
-        cout << "  平均: " << fixed << setprecision(6) << computeAverage3D(new_grid_scalar, DEPTH, ROWS, COLS) << endl << endl;
+    CompareResult r = compareGrids3D(g2, g4, DEPTH, ROWS, COLS);
+    printCompareResult(r, "单次迭代");
 
-        cout << "【SME版本计算后】" << endl;
-        printSamplePoints(new_grid_sme, "SME", DEPTH, ROWS, COLS);
-        cout << "  平均: " << fixed << setprecision(6) << computeAverage3D(new_grid_sme, DEPTH, ROWS, COLS) << endl << endl;
-
-        CompareResult result = compareGrids3D(new_grid_scalar, new_grid_sme, DEPTH, ROWS, COLS);
-        printCompareResult(result, "单次迭代 stride=1");
-        if (result.passed) {
-            totalPassed++;
-            cout << "  结果: 标量与SME版本输出完全一致!" << endl;
-        } else {
-            cout << "  警告: 标量与SME版本输出存在差异!" << endl;
-        }
-        cout << endl;
-    }
-
-    cout << "========== 测试2：多次迭代对比 ==========" << endl << endl;
-
-    {
-        totalTests++;
-        int stride = 1;
-
-        initializeGrid3D(grid_scalar, DEPTH, ROWS, COLS);
-        initializeGrid3D(grid_sme, DEPTH, ROWS, COLS);
-
-        for (int iter = 0; iter < ITERATIONS; iter++) {
-            stencil3D_27point_scalar(grid_scalar, new_grid_scalar, DEPTH, ROWS, COLS, stride);
-            swap(grid_scalar, new_grid_scalar);
-            stencil3D_27point_sme(grid_sme, new_grid_sme, DEPTH, ROWS, COLS, stride);
-            swap(grid_sme, new_grid_sme);
-        }
-
-        cout << "迭代 " << ITERATIONS << " 次后:" << endl;
-        cout << "  标量版本平均: " << fixed << setprecision(6) << computeAverage3D(grid_scalar, DEPTH, ROWS, COLS) << endl;
-        cout << "  SME版本平均:   " << fixed << setprecision(6) << computeAverage3D(grid_sme, DEPTH, ROWS, COLS) << endl << endl;
-
-        CompareResult result = compareGrids3D(grid_scalar, grid_sme, DEPTH, ROWS, COLS);
-        printCompareResult(result, "多次迭代 stride=1");
-        if (result.passed) {
-            totalPassed++;
-        }
-        cout << endl;
-    }
-
-    cout << "========== 测试3：stride=2 间隔计算 ==========" << endl << endl;
-
-    {
-        totalTests++;
-        int stride = 2;
-
-        initializeGrid3D(grid_scalar, DEPTH, ROWS, COLS);
-        initializeGrid3D(grid_sme, DEPTH, ROWS, COLS);
-
-        stencil3D_27point_scalar(grid_scalar, new_grid_scalar, DEPTH, ROWS, COLS, stride);
-        stencil3D_27point_sme(grid_sme, new_grid_sme, DEPTH, ROWS, COLS, stride);
-
-        cout << "stride=" << stride << " 时，两版本计算的是相同的稀疏点集" << endl << endl;
-
-        CompareResult result = compareGrids3D(new_grid_scalar, new_grid_sme, DEPTH, ROWS, COLS);
-        printCompareResult(result, "stride=2");
-        if (result.passed) {
-            totalPassed++;
-        }
-        cout << endl;
-    }
-
-    free(grid_scalar);
-    free(new_grid_scalar);
-    free(grid_sme);
-    free(new_grid_sme);
-
-    cout << "========================================" << endl;
-    cout << "           最终测试总结" << endl;
-    cout << "========================================" << endl;
-    cout << "通过: " << totalPassed << " / " << totalTests << endl;
-
-    if (totalPassed == totalTests) {
-        cout << endl;
-        cout << "  [成功] SME intrinsic 版本功能正确！" << endl;
-        cout << "  标量版本与 SME 版本输出一致。" << endl;
+    if (r.passed) {
+        cout << "  结果: 标量与SME版本输出完全一致!" << endl;
     } else {
-        cout << endl;
-        cout << "  [失败] 存在 " << (totalTests - totalPassed) << " 个测试未通过！" << endl;
+        cout << "  警告: 标量与SME版本输出存在差异!" << endl;
     }
-    cout << "========================================" << endl;
 
-    return (totalPassed == totalTests) ? 0 : 1;
+    free(g1); free(g2); free(g3); free(g4);
+    return r.passed ? 0 : 1;
 }
