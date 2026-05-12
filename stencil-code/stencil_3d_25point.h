@@ -12,7 +12,7 @@ void stencil3D_25point_scalar(double* __restrict__ grid, double* __restrict__ ne
                               int depth, int rows, int cols, int stride);
 
 #ifdef __ARM_FEATURE_SME
-void __arm_new("za") stencil3D_25point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
+__arm_new("za") void stencil3D_25point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
                            int depth, int rows, int cols, int stride) __arm_streaming;
 #endif
 
