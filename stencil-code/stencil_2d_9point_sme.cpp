@@ -15,7 +15,7 @@ void stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_gr
     svbool_t pg_all = svptrue_b64();
 
     for (int i = 1; i < rows - 1; i += stride) {
-        for (int j = 1; j < cols - 1; j += SVL * stride) {
+        for (int j = 1; j < cols - 1; j += SVL) {
             svbool_t pg = svwhilelt_b64(j, cols - 1);
             int base_idx = i * cols + j;
 

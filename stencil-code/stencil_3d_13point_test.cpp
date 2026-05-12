@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <iomanip>
 #include "stencil_3d_13point.h"
 
 using namespace std;
@@ -11,17 +12,19 @@ const double TOLERANCE = 1e-10;
 struct CompareResult {
     double maxDiff;
     int mismatchCount;
+    int totalPoints;
     bool passed;
 };
 
 CompareResult compareGrids3D(double* grid1, double* grid2, int depth, int rows, int cols) {
-    CompareResult result = {0.0, 0, true};
+    CompareResult result = {0.0, 0, 0, true};
     int plane_size = rows * cols;
 
     for (int k = 1; k < depth - 1; k++) {
         for (int i = 1; i < rows - 1; i++) {
             for (int j = 1; j < cols - 1; j++) {
                 int idx = k * plane_size + i * cols + j;
+                result.totalPoints++;
                 double diff = fabs(grid1[idx] - grid2[idx]);
                 if (diff > result.maxDiff) result.maxDiff = diff;
                 if (diff > TOLERANCE) {
@@ -34,9 +37,26 @@ CompareResult compareGrids3D(double* grid1, double* grid2, int depth, int rows, 
     return result;
 }
 
+void printSamplePoints(double* grid, const string& label, int depth, int rows, int cols) {
+    cout << "  " << label << " 采样点 (前5个内点):" << endl;
+    int count = 0;
+    for (int k = 1; k < depth - 1 && count < 5; k++) {
+        for (int i = 1; i < rows - 1 && count < 5; i++) {
+            for (int j = 1; j < cols - 1 && count < 5; j++) {
+                int idx = k * rows * cols + i * cols + j;
+                cout << "    [" << k << "," << i << "," << j << "] = " << fixed << setprecision(6) << grid[idx] << endl;
+                count++;
+            }
+        }
+    }
+}
+
 void printCompareResult(const CompareResult& result, const string& testName) {
-    cout << "[" << testName << "] " << (result.passed ? "PASS" : "FAIL")
-         << " 最大差异: " << result.maxDiff << endl;
+    cout << "[" << testName << "] " << (result.passed ? "PASS" : "FAIL") << endl;
+    cout << "  总计算点数: " << result.totalPoints << endl;
+    cout << "  最大差异: " << scientific << result.maxDiff << endl;
+    cout << "  不匹配点数: " << result.mismatchCount << " / " << result.totalPoints << endl;
+    cout << "  容差阈值: " << scientific << TOLERANCE << endl;
 }
 
 int main() {
@@ -44,7 +64,7 @@ int main() {
     cout << " 3D 13-point Stencil 正确性对比测试" << endl;
     cout << "========================================" << endl << endl;
 
-    const int DEPTH = 32, ROWS = 64, COLS = 64, ITERATIONS = 10;
+    const int DEPTH = 8, ROWS = 16, COLS = 16;
     size_t grid_size = DEPTH * ROWS * COLS;
 
     double* g1 = (double*)aligned_alloc(64, grid_size * sizeof(double));
@@ -52,16 +72,24 @@ int main() {
     double* g3 = (double*)aligned_alloc(64, grid_size * sizeof(double));
     double* g4 = (double*)aligned_alloc(64, grid_size * sizeof(double));
 
+    cout << "网格大小: " << DEPTH << " x " << ROWS << " x " << COLS << endl << endl;
+
     initializeGrid3D(g1, DEPTH, ROWS, COLS);
     initializeGrid3D(g3, DEPTH, ROWS, COLS);
 
     stencil3D_13point_scalar(g1, g2, DEPTH, ROWS, COLS, 1);
     stencil3D_13point_sme(g3, g4, DEPTH, ROWS, COLS, 1);
 
+    cout << "【标量版本计算后】" << endl;
+    printSamplePoints(g2, "标量", DEPTH, ROWS, COLS);
+    cout << "  平均: " << fixed << setprecision(6) << computeAverage3D(g2, DEPTH, ROWS, COLS) << endl << endl;
+
+    cout << "【SME版本计算后】" << endl;
+    printSamplePoints(g4, "SME", DEPTH, ROWS, COLS);
+    cout << "  平均: " << fixed << setprecision(6) << computeAverage3D(g4, DEPTH, ROWS, COLS) << endl << endl;
+
     CompareResult r = compareGrids3D(g2, g4, DEPTH, ROWS, COLS);
     printCompareResult(r, "单次迭代");
-
-    cout << "最终平均温度: " << computeAverage3D(g4, DEPTH, ROWS, COLS) << endl;
 
     free(g1); free(g2); free(g3); free(g4);
     return r.passed ? 0 : 1;

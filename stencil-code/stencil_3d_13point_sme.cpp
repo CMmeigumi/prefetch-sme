@@ -17,7 +17,7 @@ void stencil3D_13point_sme(double* __restrict__ grid, double* __restrict__ new_g
 
     for (int k = 1; k < depth - 1; k += stride) {
         for (int i = 1; i < rows - 1; i += stride) {
-            for (int j = 1; j < cols - 1; j += SVL * stride) {
+            for (int j = 1; j < cols - 1; j += SVL) {
                 svbool_t pg = svwhilelt_b64(j, cols - 1);
                 int base_idx = k * plane_size + i * cols + j;
 

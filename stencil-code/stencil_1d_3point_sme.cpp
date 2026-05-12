@@ -14,7 +14,7 @@ void stencil1D_3point_sme(double* __restrict__ grid, double* __restrict__ new_gr
     svfloat64_t ones = svdup_f64(1.0);
     svbool_t pg_all = svptrue_b64();
 
-    for (int i = 1; i < size - 1; i += SVL * stride) {
+    for (int i = 1; i < size - 1; i += SVL) {
         svbool_t pg = svwhilelt_b64(i, size - 1);
 
         svfloat64_t left = svld1_f64(pg, &grid[i - 1]);
