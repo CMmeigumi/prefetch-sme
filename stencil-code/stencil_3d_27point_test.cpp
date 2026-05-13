@@ -1,4 +1,4 @@
--// 3D 27-point Stencil 正确性对比测试
+// 3D 27-point Stencil 正确性对比测试
 
 #include <iostream>
 #include <iomanip>
