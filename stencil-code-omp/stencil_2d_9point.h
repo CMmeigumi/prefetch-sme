@@ -2,6 +2,7 @@
 #define STENCIL_2D_9POINT_OMP_H
 
 #include <cmath>
+#include <iostream>
 
 #ifdef __ARM_FEATURE_SME
 #include <arm_sme.h>

@@ -2,6 +2,7 @@
 #define STENCIL_3D_13POINT_OMP_H
 
 #include <cmath>
+#include <iostream>
 
 #ifdef __ARM_FEATURE_SME
 #include <arm_sme.h>
