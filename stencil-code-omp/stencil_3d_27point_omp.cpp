@@ -30,8 +30,10 @@ void stencil3D_27point_omp(double* __restrict__ grid, double* __restrict__ new_g
 }
 
 #ifdef __ARM_FEATURE_SME
+__arm_new("za")
 void stencil3D_27point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
-                            int depth, int rows, int cols, int stride) {
+                            int depth, int rows, int cols, int stride)
+    __arm_streaming {
     uint64_t SVL = svcntd();
     int plane_size = rows * cols;
     svfloat64_t weight_vec = svdup_f64(1.0 / 27.0);

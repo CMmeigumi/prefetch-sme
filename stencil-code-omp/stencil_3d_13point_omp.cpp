@@ -39,9 +39,9 @@ void stencil3D_13point_omp(double* __restrict__ grid, double* __restrict__ new_g
 }
 
 #ifdef __ARM_FEATURE_SME
+__arm_new("za")
 void stencil3D_13point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
                             int depth, int rows, int cols, int stride)
-    __arm_new("za")
     __arm_streaming {
 
     uint64_t SVL = svcntd();
