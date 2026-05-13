@@ -98,10 +98,9 @@ void stencil3D_25point_sme(double* __restrict__ grid, double* __restrict__ new_g
 int main() {
     std::cout << "3D 25-point SME 版本测试" << std::endl;
     const int DEPTH = 128, ROWS = 512, COLS = 512;
-    size_t grid_size = DEPTH * ROWS * COLS;
 
-    double* g1 = (double*)aligned_alloc(64, grid_size * sizeof(double));
-    double* g2 = (double*)aligned_alloc(64, grid_size * sizeof(double));
+    double* g1 = (double*)aligned_alloc(64, DEPTH * ROWS * COLS * sizeof(double));
+    double* g2 = (double*)aligned_alloc(64, DEPTH * ROWS * COLS * sizeof(double));
 
     for (int k = 0; k < DEPTH; k++) {
         for (int i = 0; i < ROWS; i++) {
@@ -112,17 +111,9 @@ int main() {
     }
 
     std::cout << "执行 stride=1..." << std::endl;
-    stencil3D_25point_sme(g1, g2, DEPTH, ROWS, COLS, 1);
-    
-    double sum = 0.0;
-    for (int k = 0; k < DEPTH; k++) {
-        for (int i = 0; i < ROWS; i++) {
-            for (int j = 0; j < COLS; j++) {
-                sum += g2[k * ROWS * COLS + i * COLS + j];
-            }
-        }
+    for (int iter = 0; iter < 100; iter++) {
+        stencil3D_25point_sme(g1, g2, DEPTH, ROWS, COLS, 1);
     }
-    std::cout << "  平均: " << sum / grid_size << std::endl;
 
     for (int k = 0; k < DEPTH; k++) {
         for (int i = 0; i < ROWS; i++) {
@@ -132,17 +123,9 @@ int main() {
         }
     }
     std::cout << "执行 stride=2..." << std::endl;
-    stencil3D_25point_sme(g1, g2, DEPTH, ROWS, COLS, 2);
-    
-    sum = 0.0;
-    for (int k = 0; k < DEPTH; k++) {
-        for (int i = 0; i < ROWS; i++) {
-            for (int j = 0; j < COLS; j++) {
-                sum += g2[k * ROWS * COLS + i * COLS + j];
-            }
-        }
+    for (int iter = 0; iter < 100; iter++) {
+        stencil3D_25point_sme(g1, g2, DEPTH, ROWS, COLS, 2);
     }
-    std::cout << "  平均: " << sum / grid_size << std::endl;
 
     free(g1);
     free(g2);

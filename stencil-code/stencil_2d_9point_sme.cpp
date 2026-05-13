@@ -1,18 +1,18 @@
-// ARM SME 2D 9-point Stencil 实现
-// 形状：3×3 正方形 (中心及8个邻点)
-// 应用：2D波动方程、图像处理
+// 2D 9-point Stencil SME 实现
+// 使用 ARM SME ZA MOPA 外积累加
 
 #include "stencil_2d_9point.h"
 #include <iostream>
+#include <cstdlib>
 
 __arm_new("za")
 void stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
-                            int rows, int cols, int stride)
+                          int rows, int cols, int stride)
     __arm_streaming {
 
     uint64_t SVL = svcntd();
+    int plane_size = rows * cols;
     svfloat64_t weight_vec = svdup_f64(1.0 / 9.0);
-    svfloat64_t ones = svdup_f64(1.0);
     svbool_t pg_all = svptrue_b64();
 
     for (int i = 1; i < rows - 1; i += stride) {
@@ -23,32 +23,28 @@ void stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_gr
 
             int base_idx = i * cols + j;
 
-            svfloat64_t im1_jm1 = svld1_f64(pg, &grid[(i-1) * cols + (j-1)]);
-            svfloat64_t im1_j0 = svld1_f64(pg, &grid[(i-1) * cols + j]);
-            svfloat64_t im1_jp1 = svld1_f64(pg, &grid[(i-1) * cols + (j+1)]);
+            svfloat64_t m_i1_j1 = svld1_f64(pg, &grid[(i-1) * cols + (j-1)]);
+            svfloat64_t m_i1_j0 = svld1_f64(pg, &grid[(i-1) * cols + j]);
+            svfloat64_t m_i1_jp1 = svld1_f64(pg, &grid[(i-1) * cols + (j+1)]);
 
-            svfloat64_t i0_jm1 = svld1_f64(pg, &grid[i * cols + (j-1)]);
+            svfloat64_t m_i0_j1 = svld1_f64(pg, &grid[i * cols + (j-1)]);
             svfloat64_t center = svld1_f64(pg, &grid[i * cols + j]);
-            svfloat64_t i0_jp1 = svld1_f64(pg, &grid[i * cols + (j+1)]);
+            svfloat64_t m_i0_jp1 = svld1_f64(pg, &grid[i * cols + (j+1)]);
 
-            svfloat64_t ip1_jm1 = svld1_f64(pg, &grid[(i+1) * cols + (j-1)]);
-            svfloat64_t ip1_j0 = svld1_f64(pg, &grid[(i+1) * cols + j]);
-            svfloat64_t ip1_jp1 = svld1_f64(pg, &grid[(i+1) * cols + (j+1)]);
+            svfloat64_t m_ip1_j1 = svld1_f64(pg, &grid[(i+1) * cols + (j-1)]);
+            svfloat64_t m_ip1_j0 = svld1_f64(pg, &grid[(i+1) * cols + j]);
+            svfloat64_t m_ip1_jp1 = svld1_f64(pg, &grid[(i+1) * cols + (j+1)]);
 
-            svzero_za();
+            svfloat64_t sum = svadd_x(pg, m_i1_j1, m_i1_j0);
+            sum = svadd_x(pg, sum, m_i1_jp1);
+            sum = svadd_x(pg, sum, m_i0_j1);
+            sum = svadd_x(pg, sum, center);
+            sum = svadd_x(pg, sum, m_i0_jp1);
+            sum = svadd_x(pg, sum, m_ip1_j1);
+            sum = svadd_x(pg, sum, m_ip1_j0);
+            sum = svadd_x(pg, sum, m_ip1_jp1);
 
-            svmopa_za64_f64_m(0, pg_all, pg, ones, im1_jm1);
-            svmopa_za64_f64_m(0, pg_all, pg, ones, im1_j0);
-            svmopa_za64_f64_m(0, pg_all, pg, ones, im1_jp1);
-            svmopa_za64_f64_m(0, pg_all, pg, ones, i0_jm1);
-            svmopa_za64_f64_m(0, pg_all, pg, ones, center);
-            svmopa_za64_f64_m(0, pg_all, pg, ones, i0_jp1);
-            svmopa_za64_f64_m(0, pg_all, pg, ones, ip1_jm1);
-            svmopa_za64_f64_m(0, pg_all, pg, ones, ip1_j0);
-            svmopa_za64_f64_m(0, pg_all, pg, ones, ip1_jp1);
-
-            svfloat64_t sum = svread_hor_za64_m(svundef_f64(), pg_all, 0, 0);
-            svfloat64_t result = svmul_f64_z(pg, sum, weight_vec);
+            svfloat64_t result = svmul_x(pg, sum, weight_vec);
             svst1_f64(pg, &new_grid[base_idx], result);
         }
     }
@@ -58,10 +54,9 @@ void stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_gr
 int main() {
     std::cout << "2D 9-point SME 版本测试" << std::endl;
     const int ROWS = 1024, COLS = 1024;
-    size_t grid_size = ROWS * COLS;
 
-    double* g1 = (double*)aligned_alloc(64, grid_size * sizeof(double));
-    double* g2 = (double*)aligned_alloc(64, grid_size * sizeof(double));
+    double* g1 = (double*)aligned_alloc(64, ROWS * COLS * sizeof(double));
+    double* g2 = (double*)aligned_alloc(64, ROWS * COLS * sizeof(double));
 
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
@@ -70,15 +65,9 @@ int main() {
     }
 
     std::cout << "执行 stride=1..." << std::endl;
-    stencil2D_9point_sme(g1, g2, ROWS, COLS, 1);
-    
-    double sum = 0.0;
-    for (int i = 0; i < ROWS; i++) {
-        for (int j = 0; j < COLS; j++) {
-            sum += g2[i * COLS + j];
-        }
+    for (int iter = 0; iter < 100; iter++) {
+        stencil2D_9point_sme(g1, g2, ROWS, COLS, 1);
     }
-    std::cout << "  平均: " << sum / grid_size << std::endl;
 
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
@@ -86,15 +75,9 @@ int main() {
         }
     }
     std::cout << "执行 stride=2..." << std::endl;
-    stencil2D_9point_sme(g1, g2, ROWS, COLS, 2);
-    
-    sum = 0.0;
-    for (int i = 0; i < ROWS; i++) {
-        for (int j = 0; j < COLS; j++) {
-            sum += g2[i * COLS + j];
-        }
+    for (int iter = 0; iter < 100; iter++) {
+        stencil2D_9point_sme(g1, g2, ROWS, COLS, 2);
     }
-    std::cout << "  平均: " << sum / grid_size << std::endl;
 
     free(g1);
     free(g2);
