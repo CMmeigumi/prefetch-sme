@@ -9,7 +9,7 @@ STENCILS = 3d_27 3d_13 3d_25 2d_9 2d_5 1d_3
 
 .PHONY: all clean test_all sme_all $(STENCILS)
 
-all: $(STENCILS)
+all: $(STENCILS) sme_all
 
 sme_all: sme_3d_27 sme_3d_13 sme_3d_25 sme_2d_9 sme_2d_5 sme_1d_3
 
