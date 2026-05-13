@@ -16,7 +16,22 @@ __arm_new("za") void stencil2D_9point_sme(double* __restrict__ grid, double* __r
                             int rows, int cols, int stride) __arm_streaming;
 #endif
 
-void initializeGrid2D(double* grid, int rows, int cols);
-double computeAverage2D(double* grid, int rows, int cols);
+inline void initializeGrid2D(double* grid, int rows, int cols) {
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            grid[i * cols + j] = 1.0 + i * cols + j;
+        }
+    }
+}
+
+inline double computeAverage2D(double* grid, int rows, int cols) {
+    double sum = 0.0;
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            sum += grid[i * cols + j];
+        }
+    }
+    return sum / (rows * cols);
+}
 
 #endif

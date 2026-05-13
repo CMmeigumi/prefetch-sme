@@ -16,7 +16,27 @@ __arm_new("za") void stencil3D_25point_sme(double* __restrict__ grid, double* __
                            int depth, int rows, int cols, int stride) __arm_streaming;
 #endif
 
-void initializeGrid3D(double* grid, int depth, int rows, int cols);
-double computeAverage3D(double* grid, int depth, int rows, int cols);
+inline void initializeGrid3D(double* grid, int depth, int rows, int cols) {
+    for (int k = 0; k < depth; k++) {
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                int idx = k * rows * cols + i * cols + j;
+                grid[idx] = 1.0 + (k * rows + i) * cols + j;
+            }
+        }
+    }
+}
+
+inline double computeAverage3D(double* grid, int depth, int rows, int cols) {
+    double sum = 0.0;
+    for (int k = 0; k < depth; k++) {
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                sum += grid[k * rows * cols + i * cols + j];
+            }
+        }
+    }
+    return sum / (depth * rows * cols);
+}
 
 #endif

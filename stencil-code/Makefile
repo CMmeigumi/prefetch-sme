@@ -20,7 +20,7 @@ stencil_3d_27point_test: stencil_3d_27point_test.o stencil_3d_27point_scalar.o s
 
 sme_3d_27: CXXFLAGS_SME = $(CXXFLAGS) -DRUN_MAIN
 sme_3d_27: stencil_3d_27point_sme_main.o
-	$(CXX) $(CXXFLAGS) -o sme_3d_27 stencil_3d_27point_sme_main.o $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o sme_3d_27 $^ $(LDFLAGS)
 
 stencil_3d_27point_sme_main.o: stencil_3d_27point_sme.cpp
 	$(CXX) $(CXXFLAGS_SME) -c -o $@ $<
@@ -32,7 +32,7 @@ stencil_3d_13point_test: stencil_3d_13point_test.o stencil_3d_13point_scalar.o s
 
 sme_3d_13: CXXFLAGS_SME = $(CXXFLAGS) -DRUN_MAIN
 sme_3d_13: stencil_3d_13point_sme_main.o
-	$(CXX) $(CXXFLAGS) -o sme_3d_13 stencil_3d_13point_sme_main.o $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o sme_3d_13 $^ $(LDFLAGS)
 
 stencil_3d_13point_sme_main.o: stencil_3d_13point_sme.cpp
 	$(CXX) $(CXXFLAGS_SME) -c -o $@ $<
@@ -44,7 +44,7 @@ stencil_3d_25point_test: stencil_3d_25point_test.o stencil_3d_25point_scalar.o s
 
 sme_3d_25: CXXFLAGS_SME = $(CXXFLAGS) -DRUN_MAIN
 sme_3d_25: stencil_3d_25point_sme_main.o
-	$(CXX) $(CXXFLAGS) -o sme_3d_25 stencil_3d_25point_sme_main.o $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o sme_3d_25 $^ $(LDFLAGS)
 
 stencil_3d_25point_sme_main.o: stencil_3d_25point_sme.cpp
 	$(CXX) $(CXXFLAGS_SME) -c -o $@ $<
@@ -56,7 +56,7 @@ stencil_2d_9point_test: stencil_2d_9point_test.o stencil_2d_9point_scalar.o sten
 
 sme_2d_9: CXXFLAGS_SME = $(CXXFLAGS) -DRUN_MAIN
 sme_2d_9: stencil_2d_9point_sme_main.o
-	$(CXX) $(CXXFLAGS) -o sme_2d_9 stencil_2d_9point_sme_main.o $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o sme_2d_9 $^ $(LDFLAGS)
 
 stencil_2d_9point_sme_main.o: stencil_2d_9point_sme.cpp
 	$(CXX) $(CXXFLAGS_SME) -c -o $@ $<
@@ -68,7 +68,7 @@ stencil_2d_5point_test: stencil_2d_5point_test.o stencil_2d_5point_scalar.o sten
 
 sme_2d_5: CXXFLAGS_SME = $(CXXFLAGS) -DRUN_MAIN
 sme_2d_5: stencil_2d_5point_sme_main.o
-	$(CXX) $(CXXFLAGS) -o sme_2d_5 stencil_2d_5point_sme_main.o $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o sme_2d_5 $^ $(LDFLAGS)
 
 stencil_2d_5point_sme_main.o: stencil_2d_5point_sme.cpp
 	$(CXX) $(CXXFLAGS_SME) -c -o $@ $<
@@ -80,7 +80,7 @@ stencil_1d_3point_test: stencil_1d_3point_test.o stencil_1d_3point_scalar.o sten
 
 sme_1d_3: CXXFLAGS_SME = $(CXXFLAGS) -DRUN_MAIN
 sme_1d_3: stencil_1d_3point_sme_main.o
-	$(CXX) $(CXXFLAGS) -o sme_1d_3 stencil_1d_3point_sme_main.o $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o sme_1d_3 $^ $(LDFLAGS)
 
 stencil_1d_3point_sme_main.o: stencil_1d_3point_sme.cpp
 	$(CXX) $(CXXFLAGS_SME) -c -o $@ $<
