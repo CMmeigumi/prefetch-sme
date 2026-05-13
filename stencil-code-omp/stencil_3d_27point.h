@@ -12,6 +12,7 @@ void stencil3D_27point_omp(double* __restrict__ grid, double* __restrict__ new_g
                             int depth, int rows, int cols, int stride);
 
 #ifdef __ARM_FEATURE_SME
+__arm_new("za")
 void stencil3D_27point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
                             int depth, int rows, int cols, int stride);
 #endif
