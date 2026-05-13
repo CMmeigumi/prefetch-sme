@@ -1,5 +1,4 @@
 // 3D 13-point Stencil OpenMP 实现
-// 形状：包含中心、6个面心、6个边心 (共13点)
 
 #include "stencil_3d_13point.h"
 #include <omp.h>
@@ -40,9 +39,9 @@ void stencil3D_13point_omp(double* __restrict__ grid, double* __restrict__ new_g
 }
 
 #ifdef __ARM_FEATURE_SME
-__arm_new("za")
 void stencil3D_13point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
-                           int depth, int rows, int cols, int stride)
+                            int depth, int rows, int cols, int stride)
+    __arm_new("za")
     __arm_streaming {
 
     uint64_t SVL = svcntd();

@@ -25,9 +25,9 @@ void stencil2D_5point_omp(double* __restrict__ grid, double* __restrict__ new_gr
 }
 
 #ifdef __ARM_FEATURE_SME
-__arm_new("za")
 void stencil2D_5point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
-                          int rows, int cols, int stride)
+                            int rows, int cols, int stride)
+    __arm_new("za")
     __arm_streaming {
 
     uint64_t SVL = svcntd();

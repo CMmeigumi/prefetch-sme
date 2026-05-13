@@ -12,8 +12,8 @@ void stencil3D_25point_omp(double* __restrict__ grid, double* __restrict__ new_g
                             int depth, int rows, int cols, int stride);
 
 #ifdef __ARM_FEATURE_SME
-__arm_new("za") void stencil3D_25point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
-                           int depth, int rows, int cols, int stride) __arm_streaming;
+void stencil3D_25point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
+                            int depth, int rows, int cols, int stride);
 #endif
 
 inline void initializeGrid3D(double* grid, int depth, int rows, int cols) {

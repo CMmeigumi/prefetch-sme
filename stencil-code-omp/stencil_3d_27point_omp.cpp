@@ -1,5 +1,4 @@
 // 3D 27-point Stencil OpenMP 实现
-// 形状：3×3×3 立方体，包含中心及所有相邻网格点
 
 #include "stencil_3d_27point.h"
 #include <omp.h>
@@ -31,11 +30,8 @@ void stencil3D_27point_omp(double* __restrict__ grid, double* __restrict__ new_g
 }
 
 #ifdef __ARM_FEATURE_SME
-__arm_new("za")
 void stencil3D_27point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
-                           int depth, int rows, int cols, int stride)
-    __arm_streaming {
-
+                            int depth, int rows, int cols, int stride) {
     uint64_t SVL = svcntd();
     int plane_size = rows * cols;
     svfloat64_t weight_vec = svdup_f64(1.0 / 27.0);

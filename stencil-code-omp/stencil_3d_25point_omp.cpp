@@ -1,5 +1,4 @@
 // 3D 25-point Stencil OpenMP 实现
-// 形状：沿坐标轴方向向外延伸，但角点被部分裁剪
 
 #include "stencil_3d_25point.h"
 #include <omp.h>
@@ -54,9 +53,9 @@ void stencil3D_25point_omp(double* __restrict__ grid, double* __restrict__ new_g
 }
 
 #ifdef __ARM_FEATURE_SME
-__arm_new("za")
 void stencil3D_25point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
-                           int depth, int rows, int cols, int stride)
+                            int depth, int rows, int cols, int stride)
+    __arm_new("za")
     __arm_streaming {
 
     uint64_t SVL = svcntd();

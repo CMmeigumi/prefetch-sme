@@ -1,12 +1,12 @@
-// 2D 9-point Stencil 主函数 - OpenMP 版本
+// 2D 5-point Stencil 主函数 - SME 版本
 
-#include "stencil_2d_9point.h"
+#include "stencil_2d_5point.h"
 #include <iostream>
 #include <cstdlib>
 
-#ifdef RUN_MAIN
+#ifdef RUN_MAIN_SME
 int main() {
-    std::cout << "2D 9-point OpenMP 版本测试" << std::endl;
+    std::cout << "2D 5-point SME 版本测试" << std::endl;
     const int ROWS = 1024, COLS = 1024;
 
     double* g1 = (double*)aligned_alloc(64, ROWS * COLS * sizeof(double));
@@ -15,14 +15,14 @@ int main() {
     initializeGrid2D(g1, ROWS, COLS);
 
     std::cout << "执行 stride=1..." << std::endl;
-    stencil2D_9point_omp(g1, g2, ROWS, COLS, 1);
+    stencil2D_5point_sme(g1, g2, ROWS, COLS, 1);
 
     double avg = computeAverage2D(g2, ROWS, COLS);
     std::cout << "  平均: " << avg << std::endl;
 
     initializeGrid2D(g1, ROWS, COLS);
     std::cout << "执行 stride=2..." << std::endl;
-    stencil2D_9point_omp(g1, g2, ROWS, COLS, 2);
+    stencil2D_5point_sme(g1, g2, ROWS, COLS, 2);
 
     avg = computeAverage2D(g2, ROWS, COLS);
     std::cout << "  平均: " << avg << std::endl;
