@@ -1,5 +1,5 @@
 CXX = clang++
-CXXFLAGS = -fopenmp -O3 -mcpu=hip11
+CXXFLAGS = -fopenmp -O3 -mcpu=hip11 -rtlib=compiler-rt -lgcc_s
 CXXFLAGS_MAIN = $(CXXFLAGS) -DRUN_MAIN
 LDFLAGS = -fopenmp -lm
 
