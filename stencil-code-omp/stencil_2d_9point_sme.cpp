@@ -46,4 +46,38 @@ void stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_gr
         }
     }
 }
+
+#ifdef RUN_MAIN
+int main() {
+    std::cout << "2D 9-point SME 版本测试" << std::endl;
+    const int ROWS = 1024, COLS = 1024;
+
+    double* g1 = (double*)aligned_alloc(64, ROWS * COLS * sizeof(double));
+    double* g2 = (double*)aligned_alloc(64, ROWS * COLS * sizeof(double));
+
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLS; j++) {
+            g1[i * COLS + j] = 1.0 + i * COLS + j;
+        }
+    }
+
+    std::cout << "执行 stride=1..." << std::endl;
+    for (int iter = 0; iter < 100; iter++) {
+        stencil2D_9point_sme(g1, g2, ROWS, COLS, 1);
+    }
+
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLS; j++) {
+            g1[i * COLS + j] = 1.0 + i * COLS + j;
+        }
+    }
+    std::cout << "执行 stride=2..." << std::endl;
+    for (int iter = 0; iter < 100; iter++) {
+        stencil2D_9point_sme(g1, g2, ROWS, COLS, 2);
+    }
+
+    free(g1);
+    free(g2);
+    return 0;
+}
 #endif

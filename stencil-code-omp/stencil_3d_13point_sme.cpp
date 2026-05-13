@@ -65,4 +65,42 @@ void stencil3D_13point_sme(double* __restrict__ grid, double* __restrict__ new_g
         }
     }
 }
+
+#ifdef RUN_MAIN
+int main() {
+    std::cout << "3D 13-point SME 版本测试" << std::endl;
+    const int DEPTH = 128, ROWS = 512, COLS = 512;
+
+    double* g1 = (double*)aligned_alloc(64, DEPTH * ROWS * COLS * sizeof(double));
+    double* g2 = (double*)aligned_alloc(64, DEPTH * ROWS * COLS * sizeof(double));
+
+    for (int k = 0; k < DEPTH; k++) {
+        for (int i = 0; i < ROWS; i++) {
+            for (int j = 0; j < COLS; j++) {
+                g1[k * ROWS * COLS + i * COLS + j] = 1.0 + (k * ROWS + i) * COLS + j;
+            }
+        }
+    }
+
+    std::cout << "执行 stride=1..." << std::endl;
+    for (int iter = 0; iter < 100; iter++) {
+        stencil3D_13point_sme(g1, g2, DEPTH, ROWS, COLS, 1);
+    }
+
+    for (int k = 0; k < DEPTH; k++) {
+        for (int i = 0; i < ROWS; i++) {
+            for (int j = 0; j < COLS; j++) {
+                g1[k * ROWS * COLS + i * COLS + j] = 1.0 + (k * ROWS + i) * COLS + j;
+            }
+        }
+    }
+    std::cout << "执行 stride=2..." << std::endl;
+    for (int iter = 0; iter < 100; iter++) {
+        stencil3D_13point_sme(g1, g2, DEPTH, ROWS, COLS, 2);
+    }
+
+    free(g1);
+    free(g2);
+    return 0;
+}
 #endif
