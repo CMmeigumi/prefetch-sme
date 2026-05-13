@@ -1,7 +1,7 @@
 CXX = clang++
-CXXFLAGS = -fopenmp -O3 -mcpu=hip11
+CXXFLAGS = -fopenmp -O3 -mcpu=hip11 -rtlib=compiler-rt
 CXXFLAGS_MAIN = $(CXXFLAGS) -DRUN_MAIN
-LDFLAGS = -fopenmp -lm
+LDFLAGS = -fopenmp -lm -lgcc_s
 
 STENCILS = stencil_3d_27point stencil_3d_13point stencil_3d_25point \
            stencil_2d_9point stencil_2d_5point stencil_1d_3point
