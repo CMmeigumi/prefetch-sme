@@ -57,7 +57,7 @@ void stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_gr
 #ifdef RUN_MAIN
 int main() {
     std::cout << "2D 9-point SME 版本测试" << std::endl;
-    const int ROWS = 16, COLS = 16;
+    const int ROWS = 512, COLS = 512;
     size_t grid_size = ROWS * COLS;
 
     double* g1 = (double*)aligned_alloc(64, grid_size * sizeof(double));

@@ -39,7 +39,7 @@ void stencil1D_3point_sme(double* __restrict__ grid, double* __restrict__ new_gr
 #ifdef RUN_MAIN
 int main() {
     std::cout << "1D 3-point SME 版本测试" << std::endl;
-    const int SIZE = 64;
+    const int SIZE = 65536;
 
     double* g1 = (double*)aligned_alloc(64, SIZE * sizeof(double));
     double* g2 = (double*)aligned_alloc(64, SIZE * sizeof(double));
