@@ -97,7 +97,7 @@ void stencil3D_25point_sme(double* __restrict__ grid, double* __restrict__ new_g
 #ifdef RUN_MAIN
 int main() {
     std::cout << "3D 25-point SME 版本测试" << std::endl;
-    const int DEPTH = 64, ROWS = 256, COLS = 256;
+    const int DEPTH = 128, ROWS = 512, COLS = 512;
     size_t grid_size = DEPTH * ROWS * COLS;
 
     double* g1 = (double*)aligned_alloc(64, grid_size * sizeof(double));
