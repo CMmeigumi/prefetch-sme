@@ -37,30 +37,3 @@ void stencil3D_13point_scalar(double* __restrict__ grid, double* __restrict__ ne
         }
     }
 }
-
-void initializeGrid3D(double* grid, int depth, int rows, int cols) {
-    for (int k = 0; k < depth; k++) {
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                if (k == 0 || k == depth - 1 || i == 0 || i == rows - 1 || j == 0 || j == cols - 1) {
-                    grid[k * rows * cols + i * cols + j] = 0.0;
-                } else if (k >= depth/3 && k <= 2*depth/3 &&
-                          i >= rows/3 && i <= 2*rows/3 &&
-                          j >= cols/3 && j <= 2*cols/3) {
-                    grid[k * rows * cols + i * cols + j] = 100.0;
-                } else {
-                    grid[k * rows * cols + i * cols + j] = 0.0;
-                }
-            }
-        }
-    }
-}
-
-double computeAverage3D(double* grid, int depth, int rows, int cols) {
-    double sum = 0.0;
-    int total = depth * rows * cols;
-    for (int i = 0; i < total; i++) {
-        sum += grid[i];
-    }
-    return sum / total;
-}

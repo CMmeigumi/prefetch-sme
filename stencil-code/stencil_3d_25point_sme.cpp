@@ -103,16 +103,46 @@ int main() {
     double* g1 = (double*)aligned_alloc(64, grid_size * sizeof(double));
     double* g2 = (double*)aligned_alloc(64, grid_size * sizeof(double));
 
-    initializeGrid3D(g1, DEPTH, ROWS, COLS);
+    for (int k = 0; k < DEPTH; k++) {
+        for (int i = 0; i < ROWS; i++) {
+            for (int j = 0; j < COLS; j++) {
+                g1[k * ROWS * COLS + i * COLS + j] = 1.0 + (k * ROWS + i) * COLS + j;
+            }
+        }
+    }
 
     std::cout << "执行 stride=1..." << std::endl;
     stencil3D_25point_sme(g1, g2, DEPTH, ROWS, COLS, 1);
-    std::cout << "  平均: " << computeAverage3D(g2, DEPTH, ROWS, COLS) << std::endl;
+    
+    double sum = 0.0;
+    for (int k = 0; k < DEPTH; k++) {
+        for (int i = 0; i < ROWS; i++) {
+            for (int j = 0; j < COLS; j++) {
+                sum += g2[k * ROWS * COLS + i * COLS + j];
+            }
+        }
+    }
+    std::cout << "  平均: " << sum / grid_size << std::endl;
 
-    initializeGrid3D(g1, DEPTH, ROWS, COLS);
+    for (int k = 0; k < DEPTH; k++) {
+        for (int i = 0; i < ROWS; i++) {
+            for (int j = 0; j < COLS; j++) {
+                g1[k * ROWS * COLS + i * COLS + j] = 1.0 + (k * ROWS + i) * COLS + j;
+            }
+        }
+    }
     std::cout << "执行 stride=2..." << std::endl;
     stencil3D_25point_sme(g1, g2, DEPTH, ROWS, COLS, 2);
-    std::cout << "  平均: " << computeAverage3D(g2, DEPTH, ROWS, COLS) << std::endl;
+    
+    sum = 0.0;
+    for (int k = 0; k < DEPTH; k++) {
+        for (int i = 0; i < ROWS; i++) {
+            for (int j = 0; j < COLS; j++) {
+                sum += g2[k * ROWS * COLS + i * COLS + j];
+            }
+        }
+    }
+    std::cout << "  平均: " << sum / grid_size << std::endl;
 
     free(g1);
     free(g2);

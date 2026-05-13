@@ -23,26 +23,3 @@ void stencil2D_5point_scalar(double* __restrict__ grid, double* __restrict__ new
         }
     }
 }
-
-void initializeGrid2D(double* grid, int rows, int cols) {
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
-            if (i == 0 || i == rows - 1 || j == 0 || j == cols - 1) {
-                grid[i * cols + j] = 0.0;
-            } else if (i >= rows/3 && i <= 2*rows/3 && j >= cols/3 && j <= 2*cols/3) {
-                grid[i * cols + j] = 100.0;
-            } else {
-                grid[i * cols + j] = 0.0;
-            }
-        }
-    }
-}
-
-double computeAverage2D(double* grid, int rows, int cols) {
-    double sum = 0.0;
-    int total = rows * cols;
-    for (int i = 0; i < total; i++) {
-        sum += grid[i];
-    }
-    return sum / total;
-}

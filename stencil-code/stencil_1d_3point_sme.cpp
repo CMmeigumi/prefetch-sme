@@ -44,16 +44,30 @@ int main() {
     double* g1 = (double*)aligned_alloc(64, SIZE * sizeof(double));
     double* g2 = (double*)aligned_alloc(64, SIZE * sizeof(double));
 
-    initializeGrid1D(g1, SIZE);
+    for (int i = 0; i < SIZE; i++) {
+        g1[i] = 1.0 + i;
+    }
 
     std::cout << "执行 stride=1..." << std::endl;
     stencil1D_3point_sme(g1, g2, SIZE, 1);
-    std::cout << "  平均: " << computeAverage1D(g2, SIZE) << std::endl;
+    
+    double sum = 0.0;
+    for (int i = 0; i < SIZE; i++) {
+        sum += g2[i];
+    }
+    std::cout << "  平均: " << sum / SIZE << std::endl;
 
-    initializeGrid1D(g1, SIZE);
+    for (int i = 0; i < SIZE; i++) {
+        g1[i] = 1.0 + i;
+    }
     std::cout << "执行 stride=2..." << std::endl;
     stencil1D_3point_sme(g1, g2, SIZE, 2);
-    std::cout << "  平均: " << computeAverage1D(g2, SIZE) << std::endl;
+    
+    sum = 0.0;
+    for (int i = 0; i < SIZE; i++) {
+        sum += g2[i];
+    }
+    std::cout << "  平均: " << sum / SIZE << std::endl;
 
     free(g1);
     free(g2);

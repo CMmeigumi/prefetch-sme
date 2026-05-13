@@ -63,16 +63,38 @@ int main() {
     double* g1 = (double*)aligned_alloc(64, grid_size * sizeof(double));
     double* g2 = (double*)aligned_alloc(64, grid_size * sizeof(double));
 
-    initializeGrid2D(g1, ROWS, COLS);
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLS; j++) {
+            g1[i * COLS + j] = 1.0 + i * COLS + j;
+        }
+    }
 
     std::cout << "执行 stride=1..." << std::endl;
     stencil2D_9point_sme(g1, g2, ROWS, COLS, 1);
-    std::cout << "  平均: " << computeAverage2D(g2, ROWS, COLS) << std::endl;
+    
+    double sum = 0.0;
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLS; j++) {
+            sum += g2[i * COLS + j];
+        }
+    }
+    std::cout << "  平均: " << sum / grid_size << std::endl;
 
-    initializeGrid2D(g1, ROWS, COLS);
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLS; j++) {
+            g1[i * COLS + j] = 1.0 + i * COLS + j;
+        }
+    }
     std::cout << "执行 stride=2..." << std::endl;
     stencil2D_9point_sme(g1, g2, ROWS, COLS, 2);
-    std::cout << "  平均: " << computeAverage2D(g2, ROWS, COLS) << std::endl;
+    
+    sum = 0.0;
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLS; j++) {
+            sum += g2[i * COLS + j];
+        }
+    }
+    std::cout << "  平均: " << sum / grid_size << std::endl;
 
     free(g1);
     free(g2);

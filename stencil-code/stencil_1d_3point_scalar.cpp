@@ -13,23 +13,3 @@ void stencil1D_3point_scalar(double* __restrict__ grid, double* __restrict__ new
         new_grid[i] = sum * weight;
     }
 }
-
-void initializeGrid1D(double* grid, int size) {
-    for (int i = 0; i < size; i++) {
-        if (i == 0 || i == size - 1) {
-            grid[i] = 0.0;
-        } else if (i >= size/3 && i <= 2*size/3) {
-            grid[i] = 100.0;
-        } else {
-            grid[i] = 0.0;
-        }
-    }
-}
-
-double computeAverage1D(double* grid, int size) {
-    double sum = 0.0;
-    for (int i = 0; i < size; i++) {
-        sum += grid[i];
-    }
-    return sum / size;
-}
