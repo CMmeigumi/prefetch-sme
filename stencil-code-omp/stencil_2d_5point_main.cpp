@@ -1,4 +1,4 @@
-// 2D 5-point Stencil 主函数 - OpenMP 版本
+// 2D 5-point Stencil 主函数 - 对比标量和SME实现
 
 #include "stencil_2d_5point.h"
 #include <iostream>
@@ -6,7 +6,7 @@
 
 #ifdef RUN_MAIN
 int main() {
-    std::cout << "2D 5-point OpenMP 版本测试" << std::endl;
+    std::cout << "2D 5-point Stencil 测试" << std::endl;
     const int ROWS = 1024, COLS = 1024;
 
     double* g1 = (double*)aligned_alloc(64, ROWS * COLS * sizeof(double));
@@ -14,18 +14,30 @@ int main() {
 
     initializeGrid2D(g1, ROWS, COLS);
 
-    std::cout << "执行 stride=1..." << std::endl;
+    std::cout << "标量版本测试 (stride=1)..." << std::endl;
     stencil2D_5point_omp(g1, g2, ROWS, COLS, 1);
-
     double avg = computeAverage2D(g2, ROWS, COLS);
     std::cout << "  平均: " << avg << std::endl;
 
     initializeGrid2D(g1, ROWS, COLS);
-    std::cout << "执行 stride=2..." << std::endl;
+    std::cout << "标量版本测试 (stride=2)..." << std::endl;
     stencil2D_5point_omp(g1, g2, ROWS, COLS, 2);
-
     avg = computeAverage2D(g2, ROWS, COLS);
     std::cout << "  平均: " << avg << std::endl;
+
+#ifdef __ARM_FEATURE_SME
+    initializeGrid2D(g1, ROWS, COLS);
+    std::cout << "SME 版本测试 (stride=1)..." << std::endl;
+    stencil2D_5point_sme(g1, g2, ROWS, COLS, 1);
+    avg = computeAverage2D(g2, ROWS, COLS);
+    std::cout << "  平均: " << avg << std::endl;
+
+    initializeGrid2D(g1, ROWS, COLS);
+    std::cout << "SME 版本测试 (stride=2)..." << std::endl;
+    stencil2D_5point_sme(g1, g2, ROWS, COLS, 2);
+    avg = computeAverage2D(g2, ROWS, COLS);
+    std::cout << "  平均: " << avg << std::endl;
+#endif
 
     free(g1);
     free(g2);

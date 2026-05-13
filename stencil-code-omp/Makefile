@@ -1,115 +1,95 @@
 CXX = clang++
 CXXFLAGS = -fopenmp -O3 -mcpu=hip11
-CXXFLAGS_OMP = $(CXXFLAGS)
-CXXFLAGS_SME = $(CXXFLAGS)
-CXXFLAGS_MAIN_OMP = $(CXXFLAGS_OMP) -DRUN_MAIN
-CXXFLAGS_MAIN_SME = $(CXXFLAGS_SME) -DRUN_MAIN_SME
+CXXFLAGS_MAIN = $(CXXFLAGS) -DRUN_MAIN
 LDFLAGS = -fopenmp -lm
 
-STENCILS_OMP = stencil_3d_27point_omp stencil_3d_13point_omp stencil_3d_25point_omp \
-               stencil_2d_9point_omp stencil_2d_5point_omp stencil_1d_3point_omp
+STENCILS = stencil_3d_27point stencil_3d_13point stencil_3d_25point \
+           stencil_2d_9point stencil_2d_5point stencil_1d_3point
 
-STENCILS_SME = stencil_3d_27point_sme stencil_3d_13point_sme stencil_3d_25point_sme \
-               stencil_2d_9point_sme stencil_2d_5point_sme stencil_1d_3point_sme
+all: $(STENCILS)
 
-all: $(STENCILS_OMP) $(STENCILS_SME)
+# 3D 27-point
+stencil_3d_27point: stencil_3d_27point_scalar.o stencil_3d_27point_sme.o stencil_3d_27point_main.o
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-# OpenMP versions
-stencil_3d_27point_omp: stencil_3d_27point_omp.o stencil_3d_27point_main.o
-	$(CXX) $(CXXFLAGS_OMP) -o $@ $^ $(LDFLAGS)
+# 3D 13-point
+stencil_3d_13point: stencil_3d_13point_scalar.o stencil_3d_13point_sme.o stencil_3d_13point_main.o
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-stencil_3d_13point_omp: stencil_3d_13point_omp.o stencil_3d_13point_main.o
-	$(CXX) $(CXXFLAGS_OMP) -o $@ $^ $(LDFLAGS)
+# 3D 25-point
+stencil_3d_25point: stencil_3d_25point_scalar.o stencil_3d_25point_sme.o stencil_3d_25point_main.o
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-stencil_3d_25point_omp: stencil_3d_25point_omp.o stencil_3d_25point_main.o
-	$(CXX) $(CXXFLAGS_OMP) -o $@ $^ $(LDFLAGS)
+# 2D 9-point
+stencil_2d_9point: stencil_2d_9point_scalar.o stencil_2d_9point_sme.o stencil_2d_9point_main.o
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-stencil_2d_9point_omp: stencil_2d_9point_omp.o stencil_2d_9point_main.o
-	$(CXX) $(CXXFLAGS_OMP) -o $@ $^ $(LDFLAGS)
+# 2D 5-point
+stencil_2d_5point: stencil_2d_5point_scalar.o stencil_2d_5point_sme.o stencil_2d_5point_main.o
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-stencil_2d_5point_omp: stencil_2d_5point_omp.o stencil_2d_5point_main.o
-	$(CXX) $(CXXFLAGS_OMP) -o $@ $^ $(LDFLAGS)
+# 1D 3-point
+stencil_1d_3point: stencil_1d_3point_scalar.o stencil_1d_3point_sme.o stencil_1d_3point_main.o
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-stencil_1d_3point_omp: stencil_1d_3point_omp.o stencil_1d_3point_main.o
-	$(CXX) $(CXXFLAGS_OMP) -o $@ $^ $(LDFLAGS)
+# Scalar object files
+stencil_3d_27point_scalar.o: stencil_3d_27point_scalar.cpp stencil_3d_27point.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# SME versions
-stencil_3d_27point_sme: stencil_3d_27point_omp.o stencil_3d_27point_main_sme.o
-	$(CXX) $(CXXFLAGS_SME) -o $@ $^ $(LDFLAGS)
+stencil_3d_13point_scalar.o: stencil_3d_13point_scalar.cpp stencil_3d_13point.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-stencil_3d_13point_sme: stencil_3d_13point_omp.o stencil_3d_13point_main_sme.o
-	$(CXX) $(CXXFLAGS_SME) -o $@ $^ $(LDFLAGS)
+stencil_3d_25point_scalar.o: stencil_3d_25point_scalar.cpp stencil_3d_25point.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-stencil_3d_25point_sme: stencil_3d_25point_omp.o stencil_3d_25point_main_sme.o
-	$(CXX) $(CXXFLAGS_SME) -o $@ $^ $(LDFLAGS)
+stencil_2d_9point_scalar.o: stencil_2d_9point_scalar.cpp stencil_2d_9point.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-stencil_2d_9point_sme: stencil_2d_9point_omp.o stencil_2d_9point_main_sme.o
-	$(CXX) $(CXXFLAGS_SME) -o $@ $^ $(LDFLAGS)
+stencil_2d_5point_scalar.o: stencil_2d_5point_scalar.cpp stencil_2d_5point.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-stencil_2d_5point_sme: stencil_2d_5point_omp.o stencil_2d_5point_main_sme.o
-	$(CXX) $(CXXFLAGS_SME) -o $@ $^ $(LDFLAGS)
+stencil_1d_3point_scalar.o: stencil_1d_3point_scalar.cpp stencil_1d_3point.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-stencil_1d_3point_sme: stencil_1d_3point_omp.o stencil_1d_3point_main_sme.o
-	$(CXX) $(CXXFLAGS_SME) -o $@ $^ $(LDFLAGS)
+# SME object files
+stencil_3d_27point_sme.o: stencil_3d_27point_sme.cpp stencil_3d_27point.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Object files for OMP implementations
-stencil_3d_27point_omp.o: stencil_3d_27point_omp.cpp stencil_3d_27point.h
-	$(CXX) $(CXXFLAGS_OMP) -c $< -o $@
+stencil_3d_13point_sme.o: stencil_3d_13point_sme.cpp stencil_3d_13point.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-stencil_3d_13point_omp.o: stencil_3d_13point_omp.cpp stencil_3d_13point.h
-	$(CXX) $(CXXFLAGS_OMP) -c $< -o $@
+stencil_3d_25point_sme.o: stencil_3d_25point_sme.cpp stencil_3d_25point.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-stencil_3d_25point_omp.o: stencil_3d_25point_omp.cpp stencil_3d_25point.h
-	$(CXX) $(CXXFLAGS_OMP) -c $< -o $@
+stencil_2d_9point_sme.o: stencil_2d_9point_sme.cpp stencil_2d_9point.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-stencil_2d_9point_omp.o: stencil_2d_9point_omp.cpp stencil_2d_9point.h
-	$(CXX) $(CXXFLAGS_OMP) -c $< -o $@
+stencil_2d_5point_sme.o: stencil_2d_5point_sme.cpp stencil_2d_5point.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-stencil_2d_5point_omp.o: stencil_2d_5point_omp.cpp stencil_2d_5point.h
-	$(CXX) $(CXXFLAGS_OMP) -c $< -o $@
+stencil_1d_3point_sme.o: stencil_1d_3point_sme.cpp stencil_1d_3point.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-stencil_1d_3point_omp.o: stencil_1d_3point_omp.cpp stencil_1d_3point.h
-	$(CXX) $(CXXFLAGS_OMP) -c $< -o $@
-
-# Main files for OMP
+# Main object files
 stencil_3d_27point_main.o: stencil_3d_27point_main.cpp stencil_3d_27point.h
-	$(CXX) $(CXXFLAGS_MAIN_OMP) -c $< -o $@
+	$(CXX) $(CXXFLAGS_MAIN) -c $< -o $@
 
 stencil_3d_13point_main.o: stencil_3d_13point_main.cpp stencil_3d_13point.h
-	$(CXX) $(CXXFLAGS_MAIN_OMP) -c $< -o $@
+	$(CXX) $(CXXFLAGS_MAIN) -c $< -o $@
 
 stencil_3d_25point_main.o: stencil_3d_25point_main.cpp stencil_3d_25point.h
-	$(CXX) $(CXXFLAGS_MAIN_OMP) -c $< -o $@
+	$(CXX) $(CXXFLAGS_MAIN) -c $< -o $@
 
 stencil_2d_9point_main.o: stencil_2d_9point_main.cpp stencil_2d_9point.h
-	$(CXX) $(CXXFLAGS_MAIN_OMP) -c $< -o $@
+	$(CXX) $(CXXFLAGS_MAIN) -c $< -o $@
 
 stencil_2d_5point_main.o: stencil_2d_5point_main.cpp stencil_2d_5point.h
-	$(CXX) $(CXXFLAGS_MAIN_OMP) -c $< -o $@
+	$(CXX) $(CXXFLAGS_MAIN) -c $< -o $@
 
 stencil_1d_3point_main.o: stencil_1d_3point_main.cpp stencil_1d_3point.h
-	$(CXX) $(CXXFLAGS_MAIN_OMP) -c $< -o $@
-
-# Main files for SME
-stencil_3d_27point_main_sme.o: stencil_3d_27point_main_sme.cpp stencil_3d_27point.h
-	$(CXX) $(CXXFLAGS_MAIN_SME) -c $< -o $@
-
-stencil_3d_13point_main_sme.o: stencil_3d_13point_main_sme.cpp stencil_3d_13point.h
-	$(CXX) $(CXXFLAGS_MAIN_SME) -c $< -o $@
-
-stencil_3d_25point_main_sme.o: stencil_3d_25point_main_sme.cpp stencil_3d_25point.h
-	$(CXX) $(CXXFLAGS_MAIN_SME) -c $< -o $@
-
-stencil_2d_9point_main_sme.o: stencil_2d_9point_main_sme.cpp stencil_2d_9point.h
-	$(CXX) $(CXXFLAGS_MAIN_SME) -c $< -o $@
-
-stencil_2d_5point_main_sme.o: stencil_2d_5point_main_sme.cpp stencil_2d_5point.h
-	$(CXX) $(CXXFLAGS_MAIN_SME) -c $< -o $@
-
-stencil_1d_3point_main_sme.o: stencil_1d_3point_main_sme.cpp stencil_1d_3point.h
-	$(CXX) $(CXXFLAGS_MAIN_SME) -c $< -o $@
+	$(CXX) $(CXXFLAGS_MAIN) -c $< -o $@
 
 clean:
-	rm -f *.o $(STENCILS_OMP) $(STENCILS_SME)
+	rm -f *.o $(STENCILS)
 
 .PHONY: all clean
