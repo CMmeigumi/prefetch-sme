@@ -3,6 +3,7 @@
 // 应用：2D泊松方程、简单扩散
 
 #include "stencil_2d_5point.h"
+#include <iostream>
 
 __arm_new("za")
 void stencil2D_5point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
@@ -15,8 +16,11 @@ void stencil2D_5point_sme(double* __restrict__ grid, double* __restrict__ new_gr
     svbool_t pg_all = svptrue_b64();
 
     for (int i = 1; i < rows - 1; i += stride) {
-        for (int j = 1; j < cols - 1; j += SVL) {
-            svbool_t pg = svwhilelt_b64(j, cols - 1);
+        for (int j = 1; j < cols - 1; j += SVL * stride) {
+            int j_limit = (cols - 1 < j + SVL * stride - 1) ? cols - 1 : j + SVL * stride - 1;
+            svbool_t pg = svwhilelt_b64(j, j_limit + 1);
+            if (!svptest_any(svptrue_b64(), pg)) break;
+
             int base_idx = i * cols + j;
 
             svfloat64_t center = svld1_f64(pg, &grid[base_idx]);
@@ -39,3 +43,29 @@ void stencil2D_5point_sme(double* __restrict__ grid, double* __restrict__ new_gr
         }
     }
 }
+
+#ifdef RUN_MAIN
+int main() {
+    std::cout << "2D 5-point SME 版本测试" << std::endl;
+    const int ROWS = 16, COLS = 16;
+    size_t grid_size = ROWS * COLS;
+
+    double* g1 = (double*)aligned_alloc(64, grid_size * sizeof(double));
+    double* g2 = (double*)aligned_alloc(64, grid_size * sizeof(double));
+
+    initializeGrid2D(g1, ROWS, COLS);
+
+    std::cout << "执行 stride=1..." << std::endl;
+    stencil2D_5point_sme(g1, g2, ROWS, COLS, 1);
+    std::cout << "  平均: " << computeAverage2D(g2, ROWS, COLS) << std::endl;
+
+    initializeGrid2D(g1, ROWS, COLS);
+    std::cout << "执行 stride=2..." << std::endl;
+    stencil2D_5point_sme(g1, g2, ROWS, COLS, 2);
+    std::cout << "  平均: " << computeAverage2D(g2, ROWS, COLS) << std::endl;
+
+    free(g1);
+    free(g2);
+    return 0;
+}
+#endif

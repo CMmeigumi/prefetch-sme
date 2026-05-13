@@ -3,6 +3,7 @@
 // 使用 SVE 向量加载 + SME ZA MOPA 外积累加
 
 #include "stencil_3d_27point.h"
+#include <iostream>
 
 __arm_new("za")
 void stencil3D_27point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
@@ -100,3 +101,29 @@ void stencil3D_27point_sme(double* __restrict__ grid, double* __restrict__ new_g
         }
     }
 }
+
+#ifdef RUN_MAIN
+int main() {
+    std::cout << "3D 27-point SME 版本测试" << std::endl;
+    const int DEPTH = 8, ROWS = 16, COLS = 16;
+    size_t grid_size = DEPTH * ROWS * COLS;
+
+    double* g1 = (double*)aligned_alloc(64, grid_size * sizeof(double));
+    double* g2 = (double*)aligned_alloc(64, grid_size * sizeof(double));
+
+    initializeGrid3D(g1, DEPTH, ROWS, COLS);
+
+    std::cout << "执行 stride=1..." << std::endl;
+    stencil3D_27point_sme(g1, g2, DEPTH, ROWS, COLS, 1);
+    std::cout << "  平均: " << computeAverage3D(g2, DEPTH, ROWS, COLS) << std::endl;
+
+    initializeGrid3D(g1, DEPTH, ROWS, COLS);
+    std::cout << "执行 stride=2..." << std::endl;
+    stencil3D_27point_sme(g1, g2, DEPTH, ROWS, COLS, 2);
+    std::cout << "  平均: " << computeAverage3D(g2, DEPTH, ROWS, COLS) << std::endl;
+
+    free(g1);
+    free(g2);
+    return 0;
+}
+#endif

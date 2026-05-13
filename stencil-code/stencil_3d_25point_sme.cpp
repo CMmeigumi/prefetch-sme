@@ -3,6 +3,7 @@
 // 应用：四阶或八阶精度地震成像（如Iso3DFD）
 
 #include "stencil_3d_25point.h"
+#include <iostream>
 
 __arm_new("za")
 void stencil3D_25point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
@@ -17,8 +18,11 @@ void stencil3D_25point_sme(double* __restrict__ grid, double* __restrict__ new_g
 
     for (int k = 1; k < depth - 1; k += stride) {
         for (int i = 1; i < rows - 1; i += stride) {
-            for (int j = 1; j < cols - 1; j += SVL) {
-                svbool_t pg = svwhilelt_b64(j, cols - 1);
+            for (int j = 1; j < cols - 1; j += SVL * stride) {
+                int j_limit = (cols - 1 < j + SVL * stride - 1) ? cols - 1 : j + SVL * stride - 1;
+                svbool_t pg = svwhilelt_b64(j, j_limit + 1);
+                if (!svptest_any(svptrue_b64(), pg)) break;
+
                 int base_idx = k * plane_size + i * cols + j;
 
                 svfloat64_t center = svld1_f64(pg, &grid[base_idx]);
@@ -89,3 +93,29 @@ void stencil3D_25point_sme(double* __restrict__ grid, double* __restrict__ new_g
         }
     }
 }
+
+#ifdef RUN_MAIN
+int main() {
+    std::cout << "3D 25-point SME 版本测试" << std::endl;
+    const int DEPTH = 8, ROWS = 16, COLS = 16;
+    size_t grid_size = DEPTH * ROWS * COLS;
+
+    double* g1 = (double*)aligned_alloc(64, grid_size * sizeof(double));
+    double* g2 = (double*)aligned_alloc(64, grid_size * sizeof(double));
+
+    initializeGrid3D(g1, DEPTH, ROWS, COLS);
+
+    std::cout << "执行 stride=1..." << std::endl;
+    stencil3D_25point_sme(g1, g2, DEPTH, ROWS, COLS, 1);
+    std::cout << "  平均: " << computeAverage3D(g2, DEPTH, ROWS, COLS) << std::endl;
+
+    initializeGrid3D(g1, DEPTH, ROWS, COLS);
+    std::cout << "执行 stride=2..." << std::endl;
+    stencil3D_25point_sme(g1, g2, DEPTH, ROWS, COLS, 2);
+    std::cout << "  平均: " << computeAverage3D(g2, DEPTH, ROWS, COLS) << std::endl;
+
+    free(g1);
+    free(g2);
+    return 0;
+}
+#endif

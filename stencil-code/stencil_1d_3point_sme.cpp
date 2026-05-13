@@ -3,6 +3,7 @@
 // 应用：一维对流/扩散问题
 
 #include "stencil_1d_3point.h"
+#include <iostream>
 
 __arm_new("za")
 void stencil1D_3point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
@@ -14,8 +15,10 @@ void stencil1D_3point_sme(double* __restrict__ grid, double* __restrict__ new_gr
     svfloat64_t ones = svdup_f64(1.0);
     svbool_t pg_all = svptrue_b64();
 
-    for (int i = 1; i < size - 1; i += SVL) {
-        svbool_t pg = svwhilelt_b64(i, size - 1);
+    for (int i = 1; i < size - 1; i += SVL * stride) {
+        int i_limit = (size - 2 < i + SVL * stride - 1) ? size - 2 : i + SVL * stride - 1;
+        svbool_t pg = svwhilelt_b64(i, i_limit + 1);
+        if (!svptest_any(svptrue_b64(), pg)) break;
 
         svfloat64_t left = svld1_f64(pg, &grid[i - 1]);
         svfloat64_t center = svld1_f64(pg, &grid[i]);
@@ -32,3 +35,28 @@ void stencil1D_3point_sme(double* __restrict__ grid, double* __restrict__ new_gr
         svst1_f64(pg, &new_grid[i], result);
     }
 }
+
+#ifdef RUN_MAIN
+int main() {
+    std::cout << "1D 3-point SME 版本测试" << std::endl;
+    const int SIZE = 64;
+
+    double* g1 = (double*)aligned_alloc(64, SIZE * sizeof(double));
+    double* g2 = (double*)aligned_alloc(64, SIZE * sizeof(double));
+
+    initializeGrid1D(g1, SIZE);
+
+    std::cout << "执行 stride=1..." << std::endl;
+    stencil1D_3point_sme(g1, g2, SIZE, 1);
+    std::cout << "  平均: " << computeAverage1D(g2, SIZE) << std::endl;
+
+    initializeGrid1D(g1, SIZE);
+    std::cout << "执行 stride=2..." << std::endl;
+    stencil1D_3point_sme(g1, g2, SIZE, 2);
+    std::cout << "  平均: " << computeAverage1D(g2, SIZE) << std::endl;
+
+    free(g1);
+    free(g2);
+    return 0;
+}
+#endif
