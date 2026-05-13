@@ -1,0 +1,37 @@
+#ifndef STENCIL_2D_9POINT_OMP_H
+#define STENCIL_2D_9POINT_OMP_H
+
+#include <cmath>
+
+#ifdef __ARM_FEATURE_SME
+#include <arm_sme.h>
+#include <arm_sve.h>
+#endif
+
+void stencil2D_9point_omp(double* __restrict__ grid, double* __restrict__ new_grid,
+                            int rows, int cols, int stride);
+
+#ifdef __ARM_FEATURE_SME
+__arm_new("za") void stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
+                          int rows, int cols, int stride) __arm_streaming;
+#endif
+
+inline void initializeGrid2D(double* grid, int rows, int cols) {
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            grid[i * cols + j] = 1.0 + i * cols + j;
+        }
+    }
+}
+
+inline double computeAverage2D(double* grid, int rows, int cols) {
+    double sum = 0.0;
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            sum += grid[i * cols + j];
+        }
+    }
+    return sum / (rows * cols);
+}
+
+#endif
