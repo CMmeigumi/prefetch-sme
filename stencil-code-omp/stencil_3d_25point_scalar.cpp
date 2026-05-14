@@ -51,4 +51,3 @@ void stencil3D_25point_omp(double* __restrict__ grid, double* __restrict__ new_g
         }
     }
 }
-}
