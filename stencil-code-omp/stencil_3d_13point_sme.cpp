@@ -1,6 +1,7 @@
 // 3D 13-point Stencil SME 实现
 
 #include "stencil_3d_13point.h"
+#include <omp.h>
 
 #ifdef __ARM_FEATURE_SME
 __arm_new("za")
@@ -14,6 +15,7 @@ void stencil3D_13point_sme(double* __restrict__ grid, double* __restrict__ new_g
     svfloat64_t ones = svdup_f64(1.0);
     svbool_t pg_all = svptrue_b64();
 
+    #pragma omp parallel for
     for (int k = 1; k < depth - 1; k += stride) {
         for (int i = 1; i < rows - 1; i += stride) {
             for (int j = 1; j < cols - 1; j += SVL * stride) {
