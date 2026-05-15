@@ -3,8 +3,9 @@
 编译方式：
 进入对应目录后，执行make即可。
 需要提前配置环境中的编译器，makefile默认配置使用clang++进行编译。
-毕昇编译器可以在https://www.hikunpeng.com/developer/devkit/download/bishengcompiler获取。
-获取的tar.gz包解压缩后，配置PATH和LD_LIBRARY_PATH即可，例如：
+毕昇编译器可以在https://www.hikunpeng.com/developer/devkit/download/bishengcompiler获取最新版本。
+你也可以直接使用tools目录中提供的版本。
+获取的tar.gz包解压缩后或者直接使用tools中的版本，只需配置PATH和LD_LIBRARY_PATH环境变量即可，例如：
 export PATH=/path/to/compiler/bin:$PATH
 export LD_LIBRARY_PATH=/path/to/compiler/lib:$LD_LIBRARY_PATH
 
