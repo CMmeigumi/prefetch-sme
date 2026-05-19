@@ -270,16 +270,28 @@ void stencil3D_25point_sme_pf(double* __restrict__ grid, double* __restrict__ ne
                 if (next_j < cols - 1) {
                     int prefetch_j_limit = (cols - 1 < next_j + SVL * stride - 1) ? cols - 1 : next_j + SVL * stride - 1;
                     for (int pj = next_j; pj <= prefetch_j_limit; pj += 4) {
-                        for (int pk = k - 1; pk <= k + 1; pk += 2) {
-                            if (pk > 0 && pk < depth - 1) {
-                                for (int pi = i - 1; pi <= i + 1; pi++) {
-                                    if (pi > 0 && pi < rows - 1) {
-                                        __builtin_prefetch(&grid[pk * plane_size + pi * cols + pj - 1], 0, 3);
-                                        __builtin_prefetch(&grid[pk * plane_size + pi * cols + pj], 0, 3);
-                                        __builtin_prefetch(&grid[pk * plane_size + pi * cols + pj + 1], 0, 3);
-                                    }
-                                }
-                            }
+                        __builtin_prefetch(&grid[k * plane_size + i * cols + pj], 0, 3);
+                        __builtin_prefetch(&grid[k * plane_size + i * cols + pj - 1], 0, 3);
+                        __builtin_prefetch(&grid[k * plane_size + i * cols + pj + 1], 0, 3);
+                        __builtin_prefetch(&grid[k * plane_size + (i-1) * cols + pj], 0, 3);
+                        __builtin_prefetch(&grid[k * plane_size + (i+1) * cols + pj], 0, 3);
+                        __builtin_prefetch(&grid[k * plane_size + (i-1) * cols + pj - 1], 0, 3);
+                        __builtin_prefetch(&grid[k * plane_size + (i-1) * cols + pj + 1], 0, 3);
+                        __builtin_prefetch(&grid[k * plane_size + (i+1) * cols + pj - 1], 0, 3);
+                        __builtin_prefetch(&grid[k * plane_size + (i+1) * cols + pj + 1], 0, 3);
+                        if (k - 1 > 0) {
+                            __builtin_prefetch(&grid[(k-1) * plane_size + i * cols + pj], 0, 3);
+                            __builtin_prefetch(&grid[(k-1) * plane_size + (i-1) * cols + pj], 0, 3);
+                            __builtin_prefetch(&grid[(k-1) * plane_size + (i+1) * cols + pj], 0, 3);
+                            __builtin_prefetch(&grid[(k-1) * plane_size + i * cols + pj - 1], 0, 3);
+                            __builtin_prefetch(&grid[(k-1) * plane_size + i * cols + pj + 1], 0, 3);
+                        }
+                        if (k + 1 < depth - 1) {
+                            __builtin_prefetch(&grid[(k+1) * plane_size + i * cols + pj], 0, 3);
+                            __builtin_prefetch(&grid[(k+1) * plane_size + (i-1) * cols + pj], 0, 3);
+                            __builtin_prefetch(&grid[(k+1) * plane_size + (i+1) * cols + pj], 0, 3);
+                            __builtin_prefetch(&grid[(k+1) * plane_size + i * cols + pj - 1], 0, 3);
+                            __builtin_prefetch(&grid[(k+1) * plane_size + i * cols + pj + 1], 0, 3);
                         }
                     }
                 }
