@@ -7,7 +7,7 @@
 #include <cstring>
 
 __arm_new("za")
-void stencil1D_3point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
+void stencil1D_3point_sme_pf(double* __restrict__ grid, double* __restrict__ new_grid,
                             int size, int stride)
     __arm_streaming {
 
@@ -20,6 +20,15 @@ void stencil1D_3point_sme(double* __restrict__ grid, double* __restrict__ new_gr
         for (int j = 0; j < SVL * stride; j += SVL) {
             int idx = i + j;
             if (idx >= size - 1) break;
+
+            int next_idx = idx + SVL * stride;
+            if (next_idx < size - 1) {
+                for (int pj = next_idx; pj < next_idx + SVL * stride && pj < size - 1; pj += 4) {
+                    __builtin_prefetch(&grid[pj - 1], 0, 3);
+                    __builtin_prefetch(&grid[pj], 0, 3);
+                    __builtin_prefetch(&grid[pj + 1], 0, 3);
+                }
+            }
 
             svbool_t pg = svwhilelt_b64(idx, size - 1);
             if (!svptest_any(svptrue_b64(), pg)) break;
@@ -38,7 +47,7 @@ void stencil1D_3point_sme(double* __restrict__ grid, double* __restrict__ new_gr
 }
 
 __arm_new("za")
-void stencil2D_5point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
+void stencil2D_5point_sme_pf(double* __restrict__ grid, double* __restrict__ new_grid,
                           int rows, int cols, int stride)
     __arm_streaming {
 
@@ -52,6 +61,26 @@ void stencil2D_5point_sme(double* __restrict__ grid, double* __restrict__ new_gr
             int j_limit = (cols - 1 < j + SVL * stride - 1) ? cols - 1 : j + SVL * stride - 1;
             svbool_t pg = svwhilelt_b64(j, j_limit + 1);
             if (!svptest_any(svptrue_b64(), pg)) break;
+
+            int next_j = j + SVL * stride;
+            if (next_j < cols - 1) {
+                int prefetch_j_limit = (cols - 1 < next_j + SVL * stride - 1) ? cols - 1 : next_j + SVL * stride - 1;
+                for (int pj = next_j; pj <= prefetch_j_limit; pj += 4) {
+                    __builtin_prefetch(&grid[i * cols + pj - 1], 0, 3);
+                    __builtin_prefetch(&grid[i * cols + pj], 0, 3);
+                    __builtin_prefetch(&grid[i * cols + pj + 1], 0, 3);
+                    if (i - 1 > 0) {
+                        __builtin_prefetch(&grid[(i - 1) * cols + pj - 1], 0, 3);
+                        __builtin_prefetch(&grid[(i - 1) * cols + pj], 0, 3);
+                        __builtin_prefetch(&grid[(i - 1) * cols + pj + 1], 0, 3);
+                    }
+                    if (i + 1 < rows - 1) {
+                        __builtin_prefetch(&grid[(i + 1) * cols + pj - 1], 0, 3);
+                        __builtin_prefetch(&grid[(i + 1) * cols + pj], 0, 3);
+                        __builtin_prefetch(&grid[(i + 1) * cols + pj + 1], 0, 3);
+                    }
+                }
+            }
 
             int base_idx = i * cols + j;
 
@@ -73,7 +102,7 @@ void stencil2D_5point_sme(double* __restrict__ grid, double* __restrict__ new_gr
 }
 
 __arm_new("za")
-void stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
+void stencil2D_9point_sme_pf(double* __restrict__ grid, double* __restrict__ new_grid,
                           int rows, int cols, int stride)
     __arm_streaming {
 
@@ -88,6 +117,20 @@ void stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_gr
             int j_limit = (cols - 1 < j + SVL * stride - 1) ? cols - 1 : j + SVL * stride - 1;
             svbool_t pg = svwhilelt_b64(j, j_limit + 1);
             if (!svptest_any(svptrue_b64(), pg)) break;
+
+            int next_j = j + SVL * stride;
+            if (next_j < cols - 1) {
+                int prefetch_j_limit = (cols - 1 < next_j + SVL * stride - 1) ? cols - 1 : next_j + SVL * stride - 1;
+                for (int pj = next_j; pj <= prefetch_j_limit; pj += 4) {
+                    for (int pi = i - 1; pi <= i + 1; pi++) {
+                        if (pi > 0 && pi < rows - 1) {
+                            __builtin_prefetch(&grid[pi * cols + pj - 1], 0, 3);
+                            __builtin_prefetch(&grid[pi * cols + pj], 0, 3);
+                            __builtin_prefetch(&grid[pi * cols + pj + 1], 0, 3);
+                        }
+                    }
+                }
+            }
 
             int base_idx = i * cols + j;
 
@@ -119,7 +162,7 @@ void stencil2D_9point_sme(double* __restrict__ grid, double* __restrict__ new_gr
 }
 
 __arm_new("za")
-void stencil3D_13point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
+void stencil3D_13point_sme_pf(double* __restrict__ grid, double* __restrict__ new_grid,
                            int depth, int rows, int cols, int stride)
     __arm_streaming {
 
@@ -136,6 +179,28 @@ void stencil3D_13point_sme(double* __restrict__ grid, double* __restrict__ new_g
                 int j_limit = (cols - 1 < j + SVL * stride - 1) ? cols - 1 : j + SVL * stride - 1;
                 svbool_t pg = svwhilelt_b64(j, j_limit + 1);
                 if (!svptest_any(svptrue_b64(), pg)) break;
+
+                int next_j = j + SVL * stride;
+                if (next_j < cols - 1) {
+                    int prefetch_j_limit = (cols - 1 < next_j + SVL * stride - 1) ? cols - 1 : next_j + SVL * stride - 1;
+                    for (int pj = next_j; pj <= prefetch_j_limit; pj += 4) {
+                        __builtin_prefetch(&grid[k * plane_size + i * cols + pj], 0, 3);
+                        __builtin_prefetch(&grid[k * plane_size + i * cols + pj - 1], 0, 3);
+                        __builtin_prefetch(&grid[k * plane_size + i * cols + pj + 1], 0, 3);
+                        __builtin_prefetch(&grid[k * plane_size + (i-1) * cols + pj], 0, 3);
+                        __builtin_prefetch(&grid[k * plane_size + (i+1) * cols + pj], 0, 3);
+                        if (k - 1 > 0) {
+                            __builtin_prefetch(&grid[(k-1) * plane_size + i * cols + pj], 0, 3);
+                            __builtin_prefetch(&grid[(k-1) * plane_size + (i-1) * cols + pj], 0, 3);
+                            __builtin_prefetch(&grid[(k-1) * plane_size + (i+1) * cols + pj], 0, 3);
+                        }
+                        if (k + 1 < depth - 1) {
+                            __builtin_prefetch(&grid[(k+1) * plane_size + i * cols + pj], 0, 3);
+                            __builtin_prefetch(&grid[(k+1) * plane_size + (i-1) * cols + pj], 0, 3);
+                            __builtin_prefetch(&grid[(k+1) * plane_size + (i+1) * cols + pj], 0, 3);
+                        }
+                    }
+                }
 
                 int base_idx = k * plane_size + i * cols + j;
 
@@ -183,7 +248,7 @@ void stencil3D_13point_sme(double* __restrict__ grid, double* __restrict__ new_g
 }
 
 __arm_new("za")
-void stencil3D_25point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
+void stencil3D_25point_sme_pf(double* __restrict__ grid, double* __restrict__ new_grid,
                            int depth, int rows, int cols, int stride)
     __arm_streaming {
 
@@ -200,6 +265,24 @@ void stencil3D_25point_sme(double* __restrict__ grid, double* __restrict__ new_g
                 int j_limit = (cols - 1 < j + SVL * stride - 1) ? cols - 1 : j + SVL * stride - 1;
                 svbool_t pg = svwhilelt_b64(j, j_limit + 1);
                 if (!svptest_any(svptrue_b64(), pg)) break;
+
+                int next_j = j + SVL * stride;
+                if (next_j < cols - 1) {
+                    int prefetch_j_limit = (cols - 1 < next_j + SVL * stride - 1) ? cols - 1 : next_j + SVL * stride - 1;
+                    for (int pj = next_j; pj <= prefetch_j_limit; pj += 4) {
+                        for (int pk = k - 1; pk <= k + 1; pk += 2) {
+                            if (pk > 0 && pk < depth - 1) {
+                                for (int pi = i - 1; pi <= i + 1; pi++) {
+                                    if (pi > 0 && pi < rows - 1) {
+                                        __builtin_prefetch(&grid[pk * plane_size + pi * cols + pj - 1], 0, 3);
+                                        __builtin_prefetch(&grid[pk * plane_size + pi * cols + pj], 0, 3);
+                                        __builtin_prefetch(&grid[pk * plane_size + pi * cols + pj + 1], 0, 3);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
                 int base_idx = k * plane_size + i * cols + j;
 
@@ -273,7 +356,7 @@ void stencil3D_25point_sme(double* __restrict__ grid, double* __restrict__ new_g
 }
 
 __arm_new("za")
-void stencil3D_27point_sme(double* __restrict__ grid, double* __restrict__ new_grid,
+void stencil3D_27point_sme_pf(double* __restrict__ grid, double* __restrict__ new_grid,
                            int depth, int rows, int cols, int stride)
     __arm_streaming {
 
@@ -290,6 +373,24 @@ void stencil3D_27point_sme(double* __restrict__ grid, double* __restrict__ new_g
                 int j_limit = (cols - 1 < j + SVL * stride - 1) ? cols - 1 : j + SVL * stride - 1;
                 svbool_t pg = svwhilelt_b64(j, j_limit + 1);
                 if (!svptest_any(svptrue_b64(), pg)) break;
+
+                int next_j = j + SVL * stride;
+                if (next_j < cols - 1) {
+                    int prefetch_j_limit = (cols - 1 < next_j + SVL * stride - 1) ? cols - 1 : next_j + SVL * stride - 1;
+                    for (int pj = next_j; pj <= prefetch_j_limit; pj += 4) {
+                        for (int pk = k - 1; pk <= k + 1; pk++) {
+                            if (pk > 0 && pk < depth - 1) {
+                                for (int pi = i - 1; pi <= i + 1; pi++) {
+                                    if (pi > 0 && pi < rows - 1) {
+                                        __builtin_prefetch(&grid[pk * plane_size + pi * cols + pj - 1], 0, 3);
+                                        __builtin_prefetch(&grid[pk * plane_size + pi * cols + pj], 0, 3);
+                                        __builtin_prefetch(&grid[pk * plane_size + pi * cols + pj + 1], 0, 3);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
                 int base_idx = k * plane_size + i * cols + j;
 
@@ -383,7 +484,7 @@ double test_stencil_1d_3point(bool run_stride1, bool run_stride2) {
         for (int i = 0; i < SIZE; i++) g1[i] = 1.0 + i;
         std::cout << "stride=1..." << std::endl;
         auto start = std::chrono::high_resolution_clock::now();
-        for (int iter = 0; iter < 100; iter++) stencil1D_3point_sme(g1, g2, SIZE, 1);
+        for (int iter = 0; iter < 100; iter++) stencil1D_3point_sme_pf(g1, g2, SIZE, 1);
         auto end = std::chrono::high_resolution_clock::now();
         elapsed = std::chrono::duration<double>(end - start).count();
         std::cout << "Time: " << elapsed << " s" << std::endl;
@@ -394,7 +495,7 @@ double test_stencil_1d_3point(bool run_stride1, bool run_stride2) {
         for (int i = 0; i < SIZE; i++) g1[i] = 1.0 + i;
         std::cout << "stride=2..." << std::endl;
         auto start = std::chrono::high_resolution_clock::now();
-        for (int iter = 0; iter < 100; iter++) stencil1D_3point_sme(g1, g2, SIZE, 2);
+        for (int iter = 0; iter < 100; iter++) stencil1D_3point_sme_pf(g1, g2, SIZE, 2);
         auto end = std::chrono::high_resolution_clock::now();
         elapsed = std::chrono::duration<double>(end - start).count();
         std::cout << "Time: " << elapsed << " s" << std::endl;
@@ -420,7 +521,7 @@ double test_stencil_2d_5point(bool run_stride1, bool run_stride2) {
                 g1[i * COLS + j] = 1.0 + i * COLS + j;
         std::cout << "stride=1..." << std::endl;
         auto start = std::chrono::high_resolution_clock::now();
-        for (int iter = 0; iter < 100; iter++) stencil2D_5point_sme(g1, g2, ROWS, COLS, 1);
+        for (int iter = 0; iter < 100; iter++) stencil2D_5point_sme_pf(g1, g2, ROWS, COLS, 1);
         auto end = std::chrono::high_resolution_clock::now();
         elapsed = std::chrono::duration<double>(end - start).count();
         std::cout << "Time: " << elapsed << " s" << std::endl;
@@ -433,7 +534,7 @@ double test_stencil_2d_5point(bool run_stride1, bool run_stride2) {
                 g1[i * COLS + j] = 1.0 + i * COLS + j;
         std::cout << "stride=2..." << std::endl;
         auto start = std::chrono::high_resolution_clock::now();
-        for (int iter = 0; iter < 100; iter++) stencil2D_5point_sme(g1, g2, ROWS, COLS, 2);
+        for (int iter = 0; iter < 100; iter++) stencil2D_5point_sme_pf(g1, g2, ROWS, COLS, 2);
         auto end = std::chrono::high_resolution_clock::now();
         elapsed = std::chrono::duration<double>(end - start).count();
         std::cout << "Time: " << elapsed << " s" << std::endl;
@@ -459,7 +560,7 @@ double test_stencil_2d_9point(bool run_stride1, bool run_stride2) {
                 g1[i * COLS + j] = 1.0 + i * COLS + j;
         std::cout << "stride=1..." << std::endl;
         auto start = std::chrono::high_resolution_clock::now();
-        for (int iter = 0; iter < 100; iter++) stencil2D_9point_sme(g1, g2, ROWS, COLS, 1);
+        for (int iter = 0; iter < 100; iter++) stencil2D_9point_sme_pf(g1, g2, ROWS, COLS, 1);
         auto end = std::chrono::high_resolution_clock::now();
         elapsed = std::chrono::duration<double>(end - start).count();
         std::cout << "Time: " << elapsed << " s" << std::endl;
@@ -472,7 +573,7 @@ double test_stencil_2d_9point(bool run_stride1, bool run_stride2) {
                 g1[i * COLS + j] = 1.0 + i * COLS + j;
         std::cout << "stride=2..." << std::endl;
         auto start = std::chrono::high_resolution_clock::now();
-        for (int iter = 0; iter < 100; iter++) stencil2D_9point_sme(g1, g2, ROWS, COLS, 2);
+        for (int iter = 0; iter < 100; iter++) stencil2D_9point_sme_pf(g1, g2, ROWS, COLS, 2);
         auto end = std::chrono::high_resolution_clock::now();
         elapsed = std::chrono::duration<double>(end - start).count();
         std::cout << "Time: " << elapsed << " s" << std::endl;
@@ -499,7 +600,7 @@ double test_stencil_3d_13point(bool run_stride1, bool run_stride2) {
                     g1[k * ROWS * COLS + i * COLS + j] = 1.0 + (k * ROWS + i) * COLS + j;
         std::cout << "stride=1..." << std::endl;
         auto start = std::chrono::high_resolution_clock::now();
-        for (int iter = 0; iter < 100; iter++) stencil3D_13point_sme(g1, g2, DEPTH, ROWS, COLS, 1);
+        for (int iter = 0; iter < 100; iter++) stencil3D_13point_sme_pf(g1, g2, DEPTH, ROWS, COLS, 1);
         auto end = std::chrono::high_resolution_clock::now();
         elapsed = std::chrono::duration<double>(end - start).count();
         std::cout << "Time: " << elapsed << " s" << std::endl;
@@ -513,7 +614,7 @@ double test_stencil_3d_13point(bool run_stride1, bool run_stride2) {
                     g1[k * ROWS * COLS + i * COLS + j] = 1.0 + (k * ROWS + i) * COLS + j;
         std::cout << "stride=2..." << std::endl;
         auto start = std::chrono::high_resolution_clock::now();
-        for (int iter = 0; iter < 100; iter++) stencil3D_13point_sme(g1, g2, DEPTH, ROWS, COLS, 2);
+        for (int iter = 0; iter < 100; iter++) stencil3D_13point_sme_pf(g1, g2, DEPTH, ROWS, COLS, 2);
         auto end = std::chrono::high_resolution_clock::now();
         elapsed = std::chrono::duration<double>(end - start).count();
         std::cout << "Time: " << elapsed << " s" << std::endl;
@@ -540,7 +641,7 @@ double test_stencil_3d_25point(bool run_stride1, bool run_stride2) {
                     g1[k * ROWS * COLS + i * COLS + j] = 1.0 + (k * ROWS + i) * COLS + j;
         std::cout << "stride=1..." << std::endl;
         auto start = std::chrono::high_resolution_clock::now();
-        for (int iter = 0; iter < 100; iter++) stencil3D_25point_sme(g1, g2, DEPTH, ROWS, COLS, 1);
+        for (int iter = 0; iter < 100; iter++) stencil3D_25point_sme_pf(g1, g2, DEPTH, ROWS, COLS, 1);
         auto end = std::chrono::high_resolution_clock::now();
         elapsed = std::chrono::duration<double>(end - start).count();
         std::cout << "Time: " << elapsed << " s" << std::endl;
@@ -554,7 +655,7 @@ double test_stencil_3d_25point(bool run_stride1, bool run_stride2) {
                     g1[k * ROWS * COLS + i * COLS + j] = 1.0 + (k * ROWS + i) * COLS + j;
         std::cout << "stride=2..." << std::endl;
         auto start = std::chrono::high_resolution_clock::now();
-        for (int iter = 0; iter < 100; iter++) stencil3D_25point_sme(g1, g2, DEPTH, ROWS, COLS, 2);
+        for (int iter = 0; iter < 100; iter++) stencil3D_25point_sme_pf(g1, g2, DEPTH, ROWS, COLS, 2);
         auto end = std::chrono::high_resolution_clock::now();
         elapsed = std::chrono::duration<double>(end - start).count();
         std::cout << "Time: " << elapsed << " s" << std::endl;
@@ -581,7 +682,7 @@ double test_stencil_3d_27point(bool run_stride1, bool run_stride2) {
                     g1[k * ROWS * COLS + i * COLS + j] = 1.0 + (k * ROWS + i) * COLS + j;
         std::cout << "stride=1..." << std::endl;
         auto start = std::chrono::high_resolution_clock::now();
-        for (int iter = 0; iter < 100; iter++) stencil3D_27point_sme(g1, g2, DEPTH, ROWS, COLS, 1);
+        for (int iter = 0; iter < 100; iter++) stencil3D_27point_sme_pf(g1, g2, DEPTH, ROWS, COLS, 1);
         auto end = std::chrono::high_resolution_clock::now();
         elapsed = std::chrono::duration<double>(end - start).count();
         std::cout << "Time: " << elapsed << " s" << std::endl;
@@ -595,7 +696,7 @@ double test_stencil_3d_27point(bool run_stride1, bool run_stride2) {
                     g1[k * ROWS * COLS + i * COLS + j] = 1.0 + (k * ROWS + i) * COLS + j;
         std::cout << "stride=2..." << std::endl;
         auto start = std::chrono::high_resolution_clock::now();
-        for (int iter = 0; iter < 100; iter++) stencil3D_27point_sme(g1, g2, DEPTH, ROWS, COLS, 2);
+        for (int iter = 0; iter < 100; iter++) stencil3D_27point_sme_pf(g1, g2, DEPTH, ROWS, COLS, 2);
         auto end = std::chrono::high_resolution_clock::now();
         elapsed = std::chrono::duration<double>(end - start).count();
         std::cout << "Time: " << elapsed << " s" << std::endl;
