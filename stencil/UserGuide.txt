@@ -10,9 +10,6 @@ export PATH=/path/to/compiler/bin:$PATH
 export LD_LIBRARY_PATH=/path/to/compiler/lib:$LD_LIBRARY_PATH
 
 运行方式：
-nonomp路径：
-直接运行sme_[x]d_[n]即可。x代表stencil维度，n代表点数。
-omp路径：
-运行stencil_[x]d_[n]point_sme。x代表stencil维度，n代表点数。
-推荐OMP运行参数：
+运行stencil_all_sme --help/-h,，会显示出所有的用例选项。
+omp目录推荐的OMP运行参数：
 OMP_NUM_THREADS=32 OMP_PROC_BIND=close OMP_PLACES=cores ./stencil_[x]d_[n]point_sme
