@@ -622,6 +622,7 @@ void print_usage(const char* prog_name) {
     std::cout << "  --3d25p-s2   Run 3D 25-point stencil with stride=2" << std::endl;
     std::cout << "  --3d27p-s1   Run 3D 27-point stencil with stride=1" << std::endl;
     std::cout << "  --3d27p-s2   Run 3D 27-point stencil with stride=2" << std::endl;
+    std::cout << "  --all        Run all stencils with all strides" << std::endl;
     std::cout << "  -h, --help   Show this help message" << std::endl;
 }
 
@@ -668,6 +669,19 @@ int main(int argc, char* argv[]) {
         } else if (strcmp(argv[i], "--3d27p-s1") == 0) {
             run_3d_27point_s1 = true;
         } else if (strcmp(argv[i], "--3d27p-s2") == 0) {
+            run_3d_27point_s2 = true;
+        } else if (strcmp(argv[i], "--all") == 0) {
+            run_1d_3point_s1 = true;
+            run_1d_3point_s2 = true;
+            run_2d_5point_s1 = true;
+            run_2d_5point_s2 = true;
+            run_2d_9point_s1 = true;
+            run_2d_9point_s2 = true;
+            run_3d_13point_s1 = true;
+            run_3d_13point_s2 = true;
+            run_3d_25point_s1 = true;
+            run_3d_25point_s2 = true;
+            run_3d_27point_s1 = true;
             run_3d_27point_s2 = true;
         } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
             print_usage(argv[0]);
