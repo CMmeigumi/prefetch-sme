@@ -1,0 +1,18 @@
+用例分为两个目录，分别为nonomp和omp，分别代表代码是否使用openmp。
+
+编译方式：
+进入对应目录后，执行make即可。
+需要提前配置环境中的编译器，makefile默认配置使用clang++进行编译。
+毕昇编译器可以在https://www.hikunpeng.com/developer/devkit/download/bishengcompiler获取最新版本。
+你也可以直接使用tools目录中提供的版本。
+获取的tar.gz包解压缩后或者直接使用tools中的版本，只需配置PATH和LD_LIBRARY_PATH环境变量即可，例如：
+export PATH=/path/to/compiler/bin:$PATH
+export LD_LIBRARY_PATH=/path/to/compiler/lib:$LD_LIBRARY_PATH
+
+运行方式：
+nonomp路径：
+直接运行sme_[x]d_[n]即可。x代表stencil维度，n代表点数。
+omp路径：
+运行stencil_[x]d_[n]point_sme。x代表stencil维度，n代表点数。
+推荐OMP运行参数：
+OMP_NUM_THREADS=32 OMP_PROC_BIND=close OMP_PLACES=cores ./stencil_[x]d_[n]point_sme
