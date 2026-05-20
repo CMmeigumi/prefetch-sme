@@ -13,3 +13,4 @@ export LD_LIBRARY_PATH=/path/to/compiler/lib:$LD_LIBRARY_PATH
 运行stencil_all_sme --help/-h,，会显示出所有的用例选项。
 omp目录推荐的OMP运行参数：
 OMP_NUM_THREADS=32 OMP_PROC_BIND=close OMP_PLACES=cores ./stencil_[x]d_[n]point_sme
+目录中会同步编译对应功能的标量版本：stencil_all_scalar。
