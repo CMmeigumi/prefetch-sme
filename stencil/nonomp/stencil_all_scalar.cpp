@@ -38,7 +38,7 @@ void print_usage(const char* prog_name) {
 
 double test_stencil_1d_3point(bool run_stride1, bool run_stride2) {
     std::cout << std::endl << "--- 1D 3-point ---" << std::endl;
-    const int SIZE = 16384;
+    const int SIZE = 1048576;
     double* g1 = (double*)malloc(SIZE * sizeof(double));
     double* g2 = (double*)malloc(SIZE * sizeof(double));
     double total_time = 0.0, elapsed;
@@ -137,7 +137,7 @@ double test_stencil_2d_9point(bool run_stride1, bool run_stride2) {
 
 double test_stencil_3d_13point(bool run_stride1, bool run_stride2) {
     std::cout << std::endl << "--- 3D 13-point ---" << std::endl;
-    const int DEPTH = 64, ROWS = 64, COLS = 64;
+    const int DEPTH = 128, ROWS = 512, COLS = 512;
     double* g1 = (double*)malloc(DEPTH * ROWS * COLS * sizeof(double));
     double* g2 = (double*)malloc(DEPTH * ROWS * COLS * sizeof(double));
     double total_time = 0.0, elapsed;
@@ -170,7 +170,7 @@ double test_stencil_3d_13point(bool run_stride1, bool run_stride2) {
 
 double test_stencil_3d_25point(bool run_stride1, bool run_stride2) {
     std::cout << std::endl << "--- 3D 25-point ---" << std::endl;
-    const int DEPTH = 64, ROWS = 64, COLS = 64;
+    const int DEPTH = 128, ROWS = 512, COLS = 512;
     double* g1 = (double*)malloc(DEPTH * ROWS * COLS * sizeof(double));
     double* g2 = (double*)malloc(DEPTH * ROWS * COLS * sizeof(double));
     double total_time = 0.0, elapsed;
@@ -203,7 +203,7 @@ double test_stencil_3d_25point(bool run_stride1, bool run_stride2) {
 
 double test_stencil_3d_27point(bool run_stride1, bool run_stride2) {
     std::cout << std::endl << "--- 3D 27-point ---" << std::endl;
-    const int DEPTH = 64, ROWS = 64, COLS = 64;
+    const int DEPTH = 128, ROWS = 512, COLS = 512;
     double* g1 = (double*)malloc(DEPTH * ROWS * COLS * sizeof(double));
     double* g2 = (double*)malloc(DEPTH * ROWS * COLS * sizeof(double));
     double total_time = 0.0, elapsed;
