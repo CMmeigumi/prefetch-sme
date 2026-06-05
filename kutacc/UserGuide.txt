@@ -1,0 +1,13 @@
+编译方式：
+进入 kutacc 目录，执行 make 即可。
+需要提前配置环境中的编译器，makefile默认配置使用clang++进行编译。
+毕昇编译器可以在https://www.hikunpeng.com/developer/devkit/download/bishengcompiler获取最新版本。
+你也可以直接使用tools目录中提供的版本。
+获取的tar.gz包解压缩后或者直接使用tools中的版本，只需配置PATH和LD_LIBRARY_PATH环境变量即可，例如：
+export PATH=/path/to/compiler/bin:$PATH
+export LD_LIBRARY_PATH=/path/to/compiler/lib:$LD_LIBRARY_PATH
+
+运行方式：
+./flash_mla_test          # 默认运行（100000 次循环）
+./flash_mla_test -r 1000  # 指定循环次数
+./flash_mla_test -h       # 查看帮助
