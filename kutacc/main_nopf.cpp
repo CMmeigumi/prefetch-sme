@@ -133,6 +133,9 @@ int main(int argc, char **argv)
     const size_t tiling_buffer_size = 256 * 1024;
     char *tiling_buffer = (char *)malloc(tiling_buffer_size);
 
+    // Volatile to prevent optimization
+    volatile int execution_count = 0;
+
     if (tiling_buffer) {
         printf("Calling compute_attn_1rowblock_bf16_32x64_nopf...\n\n");
 
@@ -157,10 +160,13 @@ int main(int argc, char **argv)
                         true,              // NoSplit
                         tiling_buffer      // tiling buffer pointer
                     );
+                    execution_count++;
+                    printf("  Executed bidb=%d, bidh=%d, m_block=%d\n", bidb, bidh, m_block);
                 }
             }
         }
 
+        printf("\nTotal kernel executions: %d\n", execution_count);
         printf("Kernel execution completed.\n");
         free(tiling_buffer);
     } else {
