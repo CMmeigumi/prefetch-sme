@@ -1,4 +1,4 @@
-# Makefile for FlashMLA BF16 32x64 Kernel
+# Makefile for FlashMLA BF16 32x64 Kernel (No Prefetch Version)
 #
 # This Makefile requires ARM cross-compilation toolchain with SVE/SME support
 #
@@ -12,31 +12,19 @@ INCDIRS = -I./include -I./src
 
 # Source files
 SRC = main.cpp
-SRC_NOPF = main_nopf.cpp
 
 # Output
 TARGET = flash_mla_test
-TARGET_NOPF = flash_mla_test_nopf
 
 # Default target
-all: $(TARGET) $(TARGET_NOPF)
+all: $(TARGET)
 
 $(TARGET): $(SRC)
 	$(ARM_CC) $(ARM_CFLAGS) $(INCDIRS) -o $@ $<
 
-$(TARGET_NOPF): $(SRC_NOPF)
-	$(ARM_CC) $(ARM_CFLAGS) $(INCDIRS) -o $@ $<
-
-# Build individual targets
-with_prefetch: $(TARGET)
-	@echo "Built: $(TARGET)"
-
-without_prefetch: $(TARGET_NOPF)
-	@echo "Built: $(TARGET_NOPF)"
-
 # Clean
 clean:
-	rm -f $(TARGET) $(TARGET_NOPF)
+	rm -f $(TARGET)
 
 # Test (requires ARM hardware or QEMU)
 test: $(TARGET)

@@ -74,12 +74,6 @@ void compute_attn_1rowblock_bf16_32x64(const FlashMLAFwdParams &params,
             const bfloat16_t *q0 = Q + row_offset_q + j;
             const bfloat16_t *q1 = Q + row_offset_q + 16 * 576 + j;
             for (int i = 0; i < 16; ++i) {
-                if (likely(j + 128 < 576)) {
-                    prefetch_L1(q0 + 128);
-                    prefetch_L1(q0 + 128 + 32);
-                    prefetch_L1(q1 + 128);
-                    prefetch_L1(q1 + 128 + 32);
-                }
                 svld1_hor_za32(0, i, ptrue, q0);
                 svld1_hor_za32(1, i, ptrue, q0 + 32);
                 svld1_hor_za32(2, i, ptrue, q1);
@@ -117,27 +111,14 @@ void compute_attn_1rowblock_bf16_32x64(const FlashMLAFwdParams &params,
             n_block + 2 < n_block_max ? K + block_table[n_block + 2] * params.k_batch_stride + row_offset_k : nullptr;
         kv_ptr[3] =
             n_block + 3 < n_block_max ? K + block_table[n_block + 3] * params.k_batch_stride + row_offset_k : nullptr;
-        const bfloat16_t *prefetch_ptr = nullptr;
-        bool is_odd_first = is_first_step && is_odd;
-        if (is_odd_first) {
-            prefetch_ptr = kv_ptr[1];
-        } else {
-            prefetch_ptr = kv_ptr[1] + 16 * 576;
-        }
-        
+
         for (int offset_n = 0; offset_n < tiled_n; offset_n += 32) {
             const bfloat16_t *cur_kv = kv_ptr[offset_n / 64] + offset_n % 64 * 576;
             for (int j = 0; j < 576; j += 64) {
                 const bfloat16_t *k0 = cur_kv + j;
                 const bfloat16_t *k1 = cur_kv + 16 * 576 + j;
                 for (int i = 0; i < 16; ++i) {
-                    if (likely(j + 64 < 576)) {
-                        prefetch_L1(k0 + 64);
-                        prefetch_L1(k0 + 64 + 32);
-                        prefetch_L1(k1 + 64);
-                        prefetch_L1(k1 + 64 + 32);
-                    }
-                    svld1_hor_za32(0, i, ptrue, k0);
+                svld1_hor_za32(0, i, ptrue, k0);
                     svld1_hor_za32(1, i, ptrue, k0 + 32);
                     svld1_hor_za32(2, i, ptrue, k1);
                     svld1_hor_za32(3, i, ptrue, k1 + 32);
@@ -152,19 +133,10 @@ void compute_attn_1rowblock_bf16_32x64(const FlashMLAFwdParams &params,
                 }
             }
 
-            if (offset_n == 96) {
-                prefetch_ptr = kv_ptr[2];
-            }
-
             svzero_za();
             bfloat16_t *data_atmp = block_q;
             bfloat16_t *data_btmp = block_k;
             for (int i = 0; i < 576 / 2; ++i) {
-                prefetch_L1(data_atmp + 64 * 6);
-                prefetch_L1(data_atmp + 64 * 6 + 32);
-                prefetch_L1(data_btmp + 64 * 6);
-                prefetch_L1(data_btmp + 64 * 6 + 32);
-                
                 svbfloat16_t va0 = svld1_bf16(ptrue, data_atmp);
                 svbfloat16_t vb0 = svld1_bf16(ptrue, data_btmp);
                 svmopa_za32_bf16_m(0, ptrue, ptrue, va0, vb0);
@@ -175,10 +147,6 @@ void compute_attn_1rowblock_bf16_32x64(const FlashMLAFwdParams &params,
                 svmopa_za32_bf16_m(3, ptrue, ptrue, va1, vb1);
                 data_atmp += 64;
                 data_btmp += 64;
-                if (likely(prefetch_ptr != nullptr)) {
-                    prefetch_L2(prefetch_ptr);
-                    prefetch_ptr += 32;
-                }
             }
 
             float *matd0 = block_s + offset_n * 16;
@@ -236,10 +204,6 @@ void compute_attn_1rowblock_bf16_32x64(const FlashMLAFwdParams &params,
                 sve_row_sum = svmul_m(pred, svld1(ptrue, row_sum + offset_m), sve_scale_o);
             }
             for (int i = 0; i < (end + 1) / 2; ++i) {
-                if (offset_m + 16 < 32) {
-                    prefetch_L1(block_s_begin + i * 2 * 16 + 16 * tiled_n);
-                    prefetch_L1(block_s_begin + (i * 2 + 1) * 16 + 16 * tiled_n);
-                }
                 svfloat32_t sve_s0;
                 svfloat32_t sve_s1;
                 auto pred0 = ptrue;
@@ -262,10 +226,6 @@ void compute_attn_1rowblock_bf16_32x64(const FlashMLAFwdParams &params,
                 } else {
                     sve_s1 = svdup_f32(0);
                 }
-                if (likely(prefetch_ptr != nullptr)) {
-                    prefetch_L2(prefetch_ptr);
-                    prefetch_ptr += 32;
-                }
                 svbfloat16_t sve = svcvt_bf16_f32_z(pred0, sve_s0);
                 sve = svcvtnt_bf16_f32_m(sve, pred1, sve_s1);
                 svst1(ptrue, block_p_begin + i * 64, sve);
@@ -283,9 +243,6 @@ void compute_attn_1rowblock_bf16_32x64(const FlashMLAFwdParams &params,
             svzero_za();
             bfloat16_t *data_atmp = block_p;
             for (int j = 0; j < tiled_n; j += 64) {
-                if (unlikely(!is_odd_first && kv_ptr[2] != nullptr && prefetch_ptr == kv_ptr[2] + 64 * 576)) {
-                    prefetch_ptr = kv_ptr[3];
-                }
                 const bfloat16_t *data_btmp = kv_ptr[j / 64] + offset_n;
                 for (int i = 0; i < 64 / 2; ++i) {
                     svbfloat16_t vb0 = svldnt1_bf16(ptrue, data_btmp);
@@ -300,10 +257,6 @@ void compute_attn_1rowblock_bf16_32x64(const FlashMLAFwdParams &params,
                     svmopa_za32_bf16_m(3, ptrue, ptrue, va1, vb3);
                     data_atmp += 64;
                     data_btmp += 2 * 576;
-                    if (likely(prefetch_ptr != nullptr)) {
-                        prefetch_L2(prefetch_ptr);
-                        prefetch_ptr += 32;
-                    }
                 }
             }
             float *matd0 = block_o + offset_n * 32;
