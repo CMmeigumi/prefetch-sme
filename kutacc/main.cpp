@@ -26,12 +26,38 @@ struct TestKernelTraits {
 
 int main(int argc, char **argv)
 {
-    // Test parameters
+    // Default parameters
     const int batch_size = 1;
     const int seqlen_q = 128;
     const int seqlen_k = 128;
     const int num_heads = 1;
-    const int repeat_count = 100000;  // High count for perf sampling
+    int repeat_count = 100000;  // Default value
+
+    // Parse command line
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
+            printf("Usage: %s [OPTIONS]\n\n", argv[0]);
+            printf("Options:\n");
+            printf("  -h, --help            Show this help message\n");
+            printf("  -r, --repeat N        Set repeat count (default: 100000)\n");
+            printf("\nExamples:\n");
+            printf("  %s              # Run with default (100000 repeats)\n", argv[0]);
+            printf("  %s -r 1000      # Run with 1000 repeats\n", argv[0]);
+            printf("  %s --repeat 10000  # Run with 10000 repeats\n", argv[0]);
+            printf("\nRepeat count -> Total kernel calls = repeat × %d × %d × %d\n",
+                   batch_size, num_heads, (seqlen_q + 31) / 32);
+            return 0;
+        } else if ((strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "--repeat") == 0) && i + 1 < argc) {
+            repeat_count = atoi(argv[++i]);
+        } else {
+            repeat_count = atoi(argv[i]);  // Positional argument
+        }
+    }
+
+    // Validate
+    if (repeat_count <= 0) {
+        repeat_count = 100000;
+    }
 
     // Initialize params
     kutacc::FlashMLAFwdParams params = {};
