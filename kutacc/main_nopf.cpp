@@ -136,33 +136,42 @@ int main(int argc, char **argv)
     // Volatile to prevent optimization
     volatile int execution_count = 0;
 
+    // Repeat count to give perf enough samples
+    const int repeat_count = 10000;
+
     if (tiling_buffer) {
         printf("Calling compute_attn_1rowblock_bf16_32x64_nopf...\n\n");
+        printf("Will execute %d iterations for perf sampling...\n\n", repeat_count);
 
         // Calculate block indices
         const int num_m_block = (params.seqlen_q + 31) / 32;  // kBlockM = 32
         const int num_n_block = (seqlen_k + 63) / 64;          // kBlockN = 64
 
-        // Iterate over blocks
-        for (int bidb = 0; bidb < params.b; bidb++) {
-            for (int bidh = 0; bidh < params.h; bidh++) {
-                for (int m_block = 0; m_block < num_m_block; m_block++) {
-                    // Call the NO PREFETCH kernel for causal case
-                    kutacc::compute_attn_1rowblock_bf16_32x64_nopf<TestKernelTraits, true>(
-                        params,
-                        bidb,              // bidb: batch index
-                        bidh,              // bidh: head index
-                        m_block,           // m_block: M block index
-                        0,                 // n_split_idx
-                        seqlen_k,          // seqlen_k
-                        0,                 // n_block_min
-                        num_n_block,       // n_block_max
-                        true,              // NoSplit
-                        tiling_buffer      // tiling buffer pointer
-                    );
-                    execution_count++;
-                    printf("  Executed bidb=%d, bidh=%d, m_block=%d\n", bidb, bidh, m_block);
+        // Iterate over blocks with repeat
+        for (int repeat = 0; repeat < repeat_count; repeat++) {
+            for (int bidb = 0; bidb < params.b; bidb++) {
+                for (int bidh = 0; bidh < params.h; bidh++) {
+                    for (int m_block = 0; m_block < num_m_block; m_block++) {
+                        // Call the NO PREFETCH kernel for causal case
+                        kutacc::compute_attn_1rowblock_bf16_32x64_nopf<TestKernelTraits, true>(
+                            params,
+                            bidb,              // bidb: batch index
+                            bidh,              // bidh: head index
+                            m_block,           // m_block: M block index
+                            0,                 // n_split_idx
+                            seqlen_k,          // seqlen_k
+                            0,                 // n_block_min
+                            num_n_block,       // n_block_max
+                            true,              // NoSplit
+                            tiling_buffer      // tiling buffer pointer
+                        );
+                        execution_count++;
+                    }
                 }
+            }
+            if (repeat % 1000 == 0) {
+                printf("  Progress: %d / %d\n", repeat, repeat_count);
+                fflush(stdout);
             }
         }
 
