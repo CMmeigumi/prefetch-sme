@@ -5,7 +5,7 @@
 
 # Compiler - ARM Clang with SVE/SME support
 ARM_CC = clang++
-ARM_CFLAGS = -mcpu=hip11 -O3 -std=c++17
+ARM_CFLAGS = -mcpu=hip11 -O3 -std=c++17 -w
 
 # Include paths
 INCDIRS = -I./include -I./src
