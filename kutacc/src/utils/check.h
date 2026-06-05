@@ -19,7 +19,8 @@
 #include <string>
 
 namespace kutacc {
-extern bool kutacc_check_err_set;
+inline bool kutacc_check_err_set = false;
+inline void set_check_err() { kutacc_check_err_set = true; }
 namespace internal {
     inline void check_fail_print(std::stringstream &stream)
     {
