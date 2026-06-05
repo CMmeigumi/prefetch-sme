@@ -1,8 +1,7 @@
 /*
- * Test program for mla_bf16_32x64 kernel
+ * Test program for mla_bf16_32x64 kernel (no prefetch version)
  *
- * This code is designed for ARM SVE/SME hardware and requires a proper
- * cross-compilation toolchain for ARM architecture.
+ * Designed for ARM SVE/SME hardware with cross-compilation toolchain.
  */
 
 #include <cstdio>
@@ -14,10 +13,6 @@
 #include "attention/flash_mla/common.h"
 #include "attention/flash_mla/flash_fwd_mla_kernel/kernel_traits.h"
 #include "attention/flash_mla/flash_fwd_mla_kernel/kernels/mla_bf16_32x64.h"
-
-using Element = bfloat16_t;
-using ElementAccum = float;
-using index_t = int64_t;
 
 struct TestKernelTraits {
     static constexpr int kBlockM = 32;
@@ -31,39 +26,39 @@ struct TestKernelTraits {
 
 int main(int argc, char **argv)
 {
-    printf("FlashMLA BF16 32x64 Kernel Test\n");
-    printf("================================\n\n");
+    // Test parameters
+    const int batch_size = 1;
+    const int seqlen_q = 128;
+    const int seqlen_k = 128;
+    const int num_heads = 1;
+    const int repeat_count = 100000;  // High count for perf sampling
 
-    // Create a minimal params structure
+    // Initialize params
     kutacc::FlashMLAFwdParams params = {};
-    params.b = 1;
-    params.seqlen_q = 128;
+    params.b = batch_size;
+    params.seqlen_q = seqlen_q;
     params.d = 576;
     params.d_v = 512;
-    params.h = 1;
+    params.h = num_heads;
     params.ngroups = 1;
     params.is_causal = true;
     params.scale_softmax = 0.08838834764831845f;
     params.scale_softmax_log2 = 0.12748366579437256f;
 
     // Allocate buffers
-    const int seqlen_q = params.seqlen_q;
-    const int seqlen_k = 128;
-    const int batch_size = params.b;
-
     const size_t q_size = batch_size * seqlen_q * 576 * sizeof(bfloat16_t);
     const size_t k_size = batch_size * seqlen_k * 576 * sizeof(bfloat16_t);
     const size_t o_size = batch_size * seqlen_q * 512 * sizeof(bfloat16_t);
-    const size_t lse_size = batch_size * params.h * seqlen_q * sizeof(float);
+    const size_t lse_size = batch_size * num_heads * seqlen_q * sizeof(float);
     const size_t block_table_size = batch_size * 2 * sizeof(int);
 
     params.q_ptr = malloc(q_size);
     params.k_ptr = malloc(k_size);
-    params.v_ptr = params.k_ptr;  // Shared KV
+    params.v_ptr = params.k_ptr;
     params.o_ptr = malloc(o_size);
     params.softmax_lse_ptr = malloc(lse_size);
 
-    // Initialize with random data
+    // Initialize Q/K with random data
     if (params.q_ptr) {
         bfloat16_t *q = (bfloat16_t *)params.q_ptr;
         for (size_t i = 0; i < q_size / sizeof(bfloat16_t); i++) {
@@ -93,13 +88,13 @@ int main(int argc, char **argv)
     params.v_head_stride = 0;
     params.o_head_stride = 0;
 
-    // Block table for paged attention
+    // Block table
     params.block_table = (int *)malloc(block_table_size);
     for (int i = 0; i < batch_size * 2; i++) {
-        params.block_table[i] = 0;  // Each block points to block 0
+        params.block_table[i] = 0;
     }
     params.block_table_batch_stride = 2;
-    params.page_block_size = 64;  // kBlockN
+    params.page_block_size = 64;
 
     // Tile scheduler metadata
     int tile_scheduler_metadata[8] = {0, 0, 0, seqlen_k, 0, 0, 0, 0};
@@ -116,78 +111,44 @@ int main(int argc, char **argv)
     params.cu_seqlens_k[0] = 0;
     params.cu_seqlens_k[1] = seqlen_k;
 
-    printf("Test parameters:\n");
-    printf("  Batch size: %d\n", params.b);
-    printf("  Seq len Q: %d\n", params.seqlen_q);
-    printf("  Seq len K: %d\n", seqlen_k);
-    printf("  Head dim: %d\n", params.d);
-    printf("  Head dim V: %d\n", params.d_v);
-    printf("  Num heads: %d\n", params.h);
-    printf("  Is causal: %s\n", params.is_causal ? "true" : "false");
-    printf("\n");
-
     // Allocate tiling buffer
     const size_t tiling_buffer_size = 256 * 1024;
     char *tiling_buffer = (char *)malloc(tiling_buffer_size);
 
-    // Volatile to prevent optimization
     volatile int execution_count = 0;
 
-    // Repeat count to give perf enough samples
-    const int repeat_count = 10000;
-
     if (tiling_buffer) {
-        printf("Calling compute_attn_1rowblock_bf16_32x64...\n\n");
-        printf("Will execute %d iterations for perf sampling...\n\n", repeat_count);
+        printf("FlashMLA Kernel Test\n");
+        printf("Batch=%d, SeqQ=%d, SeqK=%d, Heads=%d, Repeat=%d\n",
+               batch_size, seqlen_q, seqlen_k, num_heads, repeat_count);
 
-        // Calculate block indices
-        const int num_m_block = (params.seqlen_q + 31) / 32;  // kBlockM = 32
-        const int num_n_block = (seqlen_k + 63) / 64;          // kBlockN = 64
+        const int num_m_block = (seqlen_q + 31) / 32;
+        const int num_n_block = (seqlen_k + 63) / 64;
 
-        // Iterate over blocks with repeat
+        // Main loop
         for (int repeat = 0; repeat < repeat_count; repeat++) {
-            for (int bidb = 0; bidb < params.b; bidb++) {
-                for (int bidh = 0; bidh < params.h; bidh++) {
+            for (int bidb = 0; bidb < batch_size; bidb++) {
+                for (int bidh = 0; bidh < num_heads; bidh++) {
                     for (int m_block = 0; m_block < num_m_block; m_block++) {
-                        // Call the kernel for causal case
                         kutacc::compute_attn_1rowblock_bf16_32x64<TestKernelTraits, true>(
                             params,
-                            bidb,              // bidb: batch index
-                            bidh,              // bidh: head index
-                            m_block,           // m_block: M block index
-                            0,                 // n_split_idx
-                            seqlen_k,          // seqlen_k
-                            0,                 // n_block_min
-                            num_n_block,       // n_block_max
-                            true,              // NoSplit
-                            tiling_buffer      // tiling buffer pointer
+                            bidb, bidh, m_block,
+                            0, seqlen_k,
+                            0, num_n_block,
+                            true,
+                            tiling_buffer
                         );
                         execution_count++;
                     }
                 }
             }
-            if (repeat % 1000 == 0) {
-                printf("  Progress: %d / %d\n", repeat, repeat_count);
-                fflush(stdout);
-            }
         }
 
-        printf("\nTotal kernel executions: %d\n", execution_count);
-        printf("Kernel execution completed.\n");
+        printf("Kernel executed %d times\n", execution_count);
         free(tiling_buffer);
     } else {
         printf("Failed to allocate tiling buffer\n");
     }
 
-    // Cleanup
-    if (params.q_ptr) free(params.q_ptr);
-    if (params.k_ptr) free(params.k_ptr);
-    if (params.o_ptr) free(params.o_ptr);
-    if (params.softmax_lse_ptr) free(params.softmax_lse_ptr);
-    if (params.block_table) free(params.block_table);
-    if (params.num_splits_ptr) free(params.num_splits_ptr);
-    if (params.cu_seqlens_k) free(params.cu_seqlens_k);
-
-    printf("\nTest completed.\n");
     return 0;
 }
