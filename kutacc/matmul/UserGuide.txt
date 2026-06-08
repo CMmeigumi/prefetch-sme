@@ -1,0 +1,13 @@
+编译方式：
+进入 kutacc/matmul 目录，执行 make 即可。
+Makefile 默认使用 clang++ 进行编译。
+需要 ARM 交叉编译工具链支持 SVE2/SME 指令集。
+
+运行方式：
+./bgemm_test          # 默认运行（100000 次循环）
+./bgemm_test -r 1000  # 指定循环次数
+./bgemm_test -h      # 查看帮助
+
+Perf 使用：
+perf record -e cycles ./bgemm_test -r 100000
+perf report
