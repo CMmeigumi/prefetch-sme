@@ -17,13 +17,6 @@
 #include "kutacc_matmul.h"
 #include "bgemm_kernel_pf.h"
 
-namespace kutacc {
-
-inline int get_thread_id() { return 0; }
-inline int get_thread_num() { return 1; }
-
-} // namespace kutacc
-
 using bfloat16_t = __bf16;
 
 int main(int argc, char **argv)

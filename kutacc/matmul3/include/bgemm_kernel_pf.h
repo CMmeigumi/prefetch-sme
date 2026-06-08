@@ -16,6 +16,7 @@
 #include <arm_bf16.h>
 #include <arm_sve.h>
 #include <arm_sme.h>
+#include <algorithm>
 
 namespace kutacc {
 
