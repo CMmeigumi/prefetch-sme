@@ -29,9 +29,9 @@ using bfloat16_t = __bf16;
 int main(int argc, char **argv)
 {
     // Default parameters
-    const int m = 256;
-    const int n = 256;
-    const int k = 256;
+    const int m = 1024;
+    const int n = 1024;
+    const int k = 1024;
     int repeat_count = 100000;
 
     // Parse command line
