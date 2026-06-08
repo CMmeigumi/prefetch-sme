@@ -1,6 +1,6 @@
 CXX = clang++
-CXXFLAGS = -mcpu=hip11 -O3 -std=c++17 -w -fno-inline
-LDFLAGS = -mcpu=hip11
+CXXFLAGS = -mcpu=hip11 -O3 -std=c++17 -w -fno-inline -rtlib=compiler-rt
+LDFLAGS = -mcpu=hip11 -rtlib=compiler-rt
 INC = -Iinclude
 
 all: bgemm_test bgemm_test_pf
