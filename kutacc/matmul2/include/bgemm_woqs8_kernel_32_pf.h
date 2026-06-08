@@ -20,7 +20,7 @@
 namespace kutacc {
 
 template <bool RowQuant>
-__arm_new("za") static void bgemm_woqs8_enable_matrix(int64_t m, int64_t n, int64_t k, const int8_t *a,
+__arm_new("za") static void bgemm_woqs8_enable_matrix_pf(int64_t m, int64_t n, int64_t k, const int8_t *a,
     [[maybe_unused]] int64_t lda, const __bf16 *b, [[maybe_unused]] int64_t ldb, __bf16 *c, int64_t ldc, __bf16 _alpha,
     __bf16 _beta, const float *scale) __arm_streaming
 {
@@ -29,6 +29,7 @@ __arm_new("za") static void bgemm_woqs8_enable_matrix(int64_t m, int64_t n, int6
     svbool_t pg32 = svptrue_b32();
     float alpha = _alpha;
     [[maybe_unused]] float beta = _beta;
+    const int64_t prefetch_dis = 16;
     for (int64_t ni = 0; ni < n; ni += 32) {
         for (int64_t mi = 0; mi < m; mi += 32) {
             svfloat32_t rscale00;
@@ -77,7 +78,12 @@ __arm_new("za") static void bgemm_woqs8_enable_matrix(int64_t m, int64_t n, int6
                 svbfloat16_t a1 = svuzp1(a10_bf16, a11_bf16);
                 svbfloat16_t b0 = svld1(pg16, b + ni * k + 16 * ki);
                 svbfloat16_t b1 = svld1(pg16, b + (ni + 16) * k + 16 * ki);
-                // No prefetch in this version
+                if (ki + prefetch_dis < k) {
+                    __builtin_prefetch(a + mi * k + 16 * (ki + prefetch_dis), 0, 0);
+                    __builtin_prefetch(a + (mi + 16) * k + 16 * (ki + prefetch_dis), 0, 0);
+                    __builtin_prefetch(b + ni * k + 16 * (ki + prefetch_dis), 0, 0);
+                    __builtin_prefetch(b + (ni + 16) * k + 16 * (ki + prefetch_dis), 0, 0);
+                }
                 svmopa_za32_bf16_m(0, pg16, pg16, b0, a0);
                 svmopa_za32_bf16_m(1, pg16, pg16, b0, a1);
                 svmopa_za32_bf16_m(2, pg16, pg16, b1, a0);
