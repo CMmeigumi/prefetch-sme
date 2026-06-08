@@ -109,8 +109,6 @@ int main(int argc, char **argv)
             beta,
             scale
         );
-
-        printf(".");
     }
     printf("\nDone. Total kernel calls: %d\n", repeat_count);
 
