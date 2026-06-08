@@ -32,7 +32,7 @@ int main(int argc, char **argv)
     const int m = 1024;
     const int n = 1024;
     const int k = 1024;
-    int repeat_count = 100000;
+    int repeat_count = 1000;
 
     // Parse command line
     for (int i = 1; i < argc; i++) {
@@ -40,10 +40,10 @@ int main(int argc, char **argv)
             printf("Usage: %s [OPTIONS]\n\n", argv[0]);
             printf("Options:\n");
             printf("  -h, --help            Show this help message\n");
-            printf("  -r, --repeat N        Set repeat count (default: 100000)\n");
+            printf("  -r, --repeat N        Set repeat count (default: 1000)\n");
             printf("\nExamples:\n");
-            printf("  %s              # Run with default (100000 repeats)\n", argv[0]);
-            printf("  %s -r 1000      # Run with 1000 repeats\n", argv[0]);
+            printf("  %s              # Run with default (1000 repeats)\n", argv[0]);
+            printf("  %s -r 100       # Run with 100 repeats\n", argv[0]);
             printf("\nMatrix dimensions: M=%d, N=%d, K=%d\n", m, n, k);
             return 0;
         } else if ((strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "--repeat") == 0) && i + 1 < argc) {
