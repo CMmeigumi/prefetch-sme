@@ -3,12 +3,15 @@ CXXFLAGS = -mcpu=hip11 -O3 -std=c++17 -w -fno-inline -rtlib=compiler-rt
 LDFLAGS = -mcpu=hip11 -rtlib=compiler-rt
 INC = -Iinclude
 
-all: bgemm_test_pf
+all: bgemm_test bgemm_test_pf
+
+bgemm_test: main.cpp
+	$(CXX) $(CXXFLAGS) $(INC) -o $@ main.cpp $(LDFLAGS)
 
 bgemm_test_pf: main_pf.cpp
 	$(CXX) $(CXXFLAGS) $(INC) -o $@ main_pf.cpp $(LDFLAGS)
 
 clean:
-	rm -f bgemm_test_pf
+	rm -f bgemm_test bgemm_test_pf
 
 .PHONY: all clean
