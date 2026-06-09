@@ -1,0 +1,1 @@
+devkit advisor matrix-check -i $PWD -o /home/c00667020/prefetch-sme/fft-output/ -p sme
