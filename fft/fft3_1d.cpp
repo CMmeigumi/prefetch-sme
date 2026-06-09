@@ -50,7 +50,7 @@ int test_fft_1d() {
 
     // Use fftw_plan_dft_1d
     fftw_plan forward_plan = fftw_plan_dft_1d(N, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
-    fftw_plan inverse_plan = fftw_plan_dft_1d(N, in, inverse, FFTW_BACKWARD, FFTW_ESTIMATE);
+    fftw_plan inverse_plan = fftw_plan_dft_1d(N, out, inverse, FFTW_BACKWARD, FFTW_ESTIMATE);
 
     // Use fftw_execute
     fftw_execute(forward_plan);
