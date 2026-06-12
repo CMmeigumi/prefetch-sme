@@ -1,0 +1,14 @@
+该用例为TritonCPU中的Flaggems用例，以下为运行用例的步骤：
+1、conda activate triton-env
+这是一个已经配置好的python运行环境，注意不要修改环境中的任何配置，如有需要，可以通过conda复制该环境或通知管理员处理。
+2、source env.sh
+以下路径为一个env.sh的例子：/home/share/env.sh
+脚本中配置了运行前的一些环境变量配置。其中：
+TRITON_SHARED_DUMP_PATH请修改为自己创建的路径。这个路径是用来保存运行用例时输出的ir等中间文件的。
+3、cd /home/share/triton/triton-cpu/FlagGems/tests
+注意：这个目录是已经开放给所有用户权限，但请不要随意修改其中的内容。如果需要对测试用例做修改，可以自行复制用例。
+4、pytest -s test_blas_ops_mem.py::test_accuracy_bmm_membound[dtype2-8192-64-2048]
+这是运行用例的命令。test_blas_ops_mem.py为用例文件，test_accuracy_bmm_membound为测试项，[dtype2-8192-64-2048]为参数。
+可以通过以下命令确认都有哪些合法参数：
+pytest -s test_blas_ops_mem.py::test_accuracy_bmm_membound --collect-only -q
+5、建议使用4中所用case，也可以自行验证test_blas_ops.py中带有mm操作的用例。
