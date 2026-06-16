@@ -1,6 +1,9 @@
 该用例为TritonCPU中的Flaggems用例，以下为运行用例的步骤：
 1、conda activate triton-env
 这是一个已经配置好的python运行环境，注意不要修改环境中的任何配置，如有需要，可以通过conda复制该环境或通知管理员处理。
+如果你的环境上没有conda命令，请先执行：
+export PATH=/opt/miniconda3/condabin:$PATH
+conda init
 2、source env.sh
 以下路径为一个env.sh的例子：/home/share/env.sh
 脚本中配置了运行前的一些环境变量配置。其中：
