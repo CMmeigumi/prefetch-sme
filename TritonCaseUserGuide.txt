@@ -1,5 +1,5 @@
 该用例为TritonCPU中的Flaggems用例，以下为运行用例的步骤：
-1、conda activate triton-env
+1、conda activate /opt/miniconda3/envs/triton-env
 这是一个已经配置好的python运行环境，注意不要修改环境中的任何配置，如有需要，可以通过conda复制该环境或通知管理员处理。
 如果你的环境上没有conda命令，请先执行：
 export PATH=/opt/miniconda3/condabin:$PATH
@@ -15,3 +15,5 @@ TRITON_SHARED_DUMP_PATH请修改为自己创建的路径。这个路径是用来
 可以通过以下命令确认都有哪些合法参数：
 pytest -s test_blas_ops_mem.py::test_accuracy_bmm_membound --collect-only -q
 5、建议使用4中所用case，也可以自行验证test_blas_ops.py中带有mm操作的用例。
+6、建议每次测试前执行rm -rf ~/.trition/cache
+这会删除缓存，会触发测试时重新编译。如果不希望触发重新编译，则不要执行该命令。
